@@ -60,6 +60,23 @@ Tiraz-MVP/
 
 ## 🚀 Quick Start
 
+### 🎭 Demo Mode (Try It Now!)
+
+Want to quickly see the application in action? Use the demo mode:
+
+```bash
+# One-command quick start with sample data
+./quickstart.sh
+
+# Or manually
+python3 demo.py
+python3 run.py
+```
+
+Visit: **http://localhost:5000** to explore the demo with 12 pre-loaded sample items!
+
+📚 For detailed demo instructions, see [DEMO.md](DEMO.md)
+
 ### Prerequisites
 
 - Node.js >= 18
