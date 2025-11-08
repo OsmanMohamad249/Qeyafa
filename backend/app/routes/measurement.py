@@ -3,6 +3,10 @@ from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 import os
+import logging
+import glob
+
+from ..ai_client import call_ai_measurement
 
 router = APIRouter()
 
@@ -34,9 +38,10 @@ async def upload_photos(files: List[UploadFile] = File(...), userId: str = Form(
 @router.post("/process")
 async def process_measurements(payload: ProcessRequest):
     """
-    Example endpoint that would call the AI measurement service (local or internal).
-    For now returns a mocked response consistent with previous API.
+    Process measurements by calling AI service with sample images.
+    Falls back to mock data if AI service is unavailable.
     """
+    # Define the mock fallback response
     mock = {
         "chest": 98,
         "waist": 82,
@@ -48,12 +53,67 @@ async def process_measurements(payload: ProcessRequest):
         "weight": payload.weight,
         "unit": "cm",
     }
-    return {
-        "status": "success",
-        "message": "Measurements processed successfully (mock)",
-        "data": {
-            "measurements": mock,
+    
+    # Try to call AI service with sample images from uploads
+    try:
+        upload_dir = "uploads/measurements/"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Get sample image paths if they exist
+        image_files = (
+            glob.glob(os.path.join(upload_dir, "*.jpg")) +
+            glob.glob(os.path.join(upload_dir, "*.jpeg")) +
+            glob.glob(os.path.join(upload_dir, "*.png"))
+        )
+        sample_images = image_files[:5] if image_files else []
+        
+        # Prepare metadata
+        metadata = {
             "userId": payload.userId,
-            "processedAt": datetime.utcnow().isoformat() + "Z",
-        },
-    }
+            "height": payload.height,
+            "weight": payload.weight,
+            "timestamp": datetime.utcnow().isoformat() + "Z"
+        }
+        
+        # Attempt to call AI service
+        if sample_images:
+            ai_result = await call_ai_measurement(sample_images, metadata)
+            return {
+                "status": "success",
+                "message": "Measurements processed via AI service",
+                "data": {
+                    "measurements": ai_result.get("measurements", mock),
+                    "userId": payload.userId,
+                    "processedAt": datetime.utcnow().isoformat() + "Z",
+                    "source": "ai_service"
+                },
+            }
+        else:
+            # No images available, return mock with note
+            return {
+                "status": "success",
+                "message": "No images found - using mock data",
+                "data": {
+                    "measurements": mock,
+                    "userId": payload.userId,
+                    "processedAt": datetime.utcnow().isoformat() + "Z",
+                    "source": "mock_no_images"
+                },
+            }
+    
+    except Exception as e:
+        # AI service failed, return mock data
+        # Log the full error trace server-side (in production, send to logging system)
+        import logging
+        logging.error(f"AI service error: {type(e).__name__}", exc_info=True)
+        
+        return {
+            "status": "success",
+            "message": "AI service unavailable - using mock data",
+            "data": {
+                "measurements": mock,
+                "userId": payload.userId,
+                "processedAt": datetime.utcnow().isoformat() + "Z",
+                "source": "mock_fallback"
+            }
+        }
