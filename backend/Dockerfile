@@ -1,21 +1,11 @@
-FROM node:18-alpine
+# backend/Dockerfile
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install dependencies
-RUN npm install
+COPY backend/ .
 
-# Copy application code
-COPY . .
-
-# Create uploads directory
-RUN mkdir -p uploads/measurements
-
-# Expose port
-EXPOSE 5000
-
-# Start the application
-CMD ["npm", "start"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
