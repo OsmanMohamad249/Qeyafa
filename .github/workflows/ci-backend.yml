@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build-backend:
     runs-on: ubuntu-latest
@@ -28,7 +31,18 @@ jobs:
       run: |
         cd backend
         uvicorn app.main:app --host 0.0.0.0 --port 5000 &
-        sleep 5
+        
+        # Wait for server to be ready with retry logic
+        for i in {1..30}; do
+          if curl -s http://localhost:5000/health > /dev/null 2>&1; then
+            echo "Server is ready!"
+            exit 0
+          fi
+          echo "Waiting for server to start... attempt $i/30"
+          sleep 1
+        done
+        echo "Server failed to start within 30 seconds"
+        exit 1
     
     - name: Health check
       run: |

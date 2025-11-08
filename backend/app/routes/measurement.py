@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 import os
-import traceback
+import logging
 import glob
 
 from ..ai_client import call_ai_measurement
@@ -60,7 +60,11 @@ async def process_measurements(payload: ProcessRequest):
         os.makedirs(upload_dir, exist_ok=True)
         
         # Get sample image paths if they exist
-        image_files = glob.glob(os.path.join(upload_dir, "*.[jp][pn][g]*"))
+        image_files = (
+            glob.glob(os.path.join(upload_dir, "*.jpg")) +
+            glob.glob(os.path.join(upload_dir, "*.jpeg")) +
+            glob.glob(os.path.join(upload_dir, "*.png"))
+        )
         sample_images = image_files[:5] if image_files else []
         
         # Prepare metadata
@@ -98,8 +102,11 @@ async def process_measurements(payload: ProcessRequest):
             }
     
     except Exception as e:
-        # AI service failed, return mock data with error info for debugging
-        error_trace = traceback.format_exc()
+        # AI service failed, return mock data
+        # Log the full error trace server-side (in production, send to logging system)
+        import logging
+        logging.error(f"AI service error: {type(e).__name__}", exc_info=True)
+        
         return {
             "status": "success",
             "message": "AI service unavailable - using mock data",
@@ -108,9 +115,5 @@ async def process_measurements(payload: ProcessRequest):
                 "userId": payload.userId,
                 "processedAt": datetime.utcnow().isoformat() + "Z",
                 "source": "mock_fallback"
-            },
-            "debug": {
-                "error": str(e),
-                "trace": error_trace
             }
         }
