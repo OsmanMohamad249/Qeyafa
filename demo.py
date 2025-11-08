@@ -8,7 +8,7 @@ This script populates the database with sample data for demonstration purposes.
 """
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -105,7 +105,7 @@ def create_demo_items():
             style=item_data['style']
         )
         # Simulate creation over the past week
-        item.created_at = datetime.utcnow() - timedelta(days=6-i//2, hours=i*2)
+        item.created_at = datetime.now(timezone.utc) - timedelta(days=6-i//2, hours=i*2)
         db.session.add(item)
         items_created.append(item)
     
