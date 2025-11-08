@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routes.measurement import router as measurement_router
+from .routes.measurement import router as measurement_router
 
 app = FastAPI(title="Tiraz Backend (FastAPI)", version="0.1.0")
 
