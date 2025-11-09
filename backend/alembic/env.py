@@ -15,7 +15,6 @@ sys.path.insert(0, str(backend_dir))
 
 from core.config import settings
 from core.database import Base
-from models import User, Measurement  # Import all models here
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

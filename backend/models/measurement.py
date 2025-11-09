@@ -3,12 +3,10 @@ Measurement model.
 """
 
 import uuid
-from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Float, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 
 from core.database import Base
 

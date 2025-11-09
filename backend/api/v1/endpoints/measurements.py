@@ -4,7 +4,6 @@ Measurements endpoints for photo upload and processing.
 
 import os
 import uuid
-from typing import Dict
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 import aiofiles
@@ -15,7 +14,6 @@ from models.user import User
 from models.measurement import Measurement
 from schemas.measurement import (
     MeasurementProcessResponse,
-    MeasurementResponse,
     MeasurementUploadResponse,
 )
 from services.ai_client import ai_client, AIServiceError
@@ -70,7 +68,7 @@ async def save_upload_file(file: UploadFile, user_id: uuid.UUID) -> str:
 
     # Save file using aiofiles to prevent blocking
     contents = await file.read()
-    async with aiofiles.open(file_path, 'wb') as f:
+    async with aiofiles.open(file_path, "wb") as f:
         await f.write(contents)
 
     # Reset file pointer for potential reuse

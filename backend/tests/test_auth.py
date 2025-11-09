@@ -5,7 +5,6 @@ Note: These tests require a running database.
 Run with: pytest tests/test_auth.py
 """
 
-import pytest
 from fastapi.testclient import TestClient
 from main import app
 

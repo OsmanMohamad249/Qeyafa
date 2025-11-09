@@ -3,7 +3,7 @@ Measurement schemas for API request/response validation.
 """
 
 from pydantic import BaseModel, Field
-from typing import Dict, Optional
+from typing import Dict
 from datetime import datetime
 import uuid
 

@@ -69,19 +69,35 @@ class AIClient:
                 files = [
                     (
                         "photo_front",
-                        (photo_front.filename, await photo_front.read(), photo_front.content_type),
+                        (
+                            photo_front.filename,
+                            await photo_front.read(),
+                            photo_front.content_type,
+                        ),
                     ),
                     (
                         "photo_back",
-                        (photo_back.filename, await photo_back.read(), photo_back.content_type),
+                        (
+                            photo_back.filename,
+                            await photo_back.read(),
+                            photo_back.content_type,
+                        ),
                     ),
                     (
                         "photo_left",
-                        (photo_left.filename, await photo_left.read(), photo_left.content_type),
+                        (
+                            photo_left.filename,
+                            await photo_left.read(),
+                            photo_left.content_type,
+                        ),
                     ),
                     (
                         "photo_right",
-                        (photo_right.filename, await photo_right.read(), photo_right.content_type),
+                        (
+                            photo_right.filename,
+                            await photo_right.read(),
+                            photo_right.content_type,
+                        ),
                     ),
                 ]
 
@@ -115,7 +131,9 @@ class AIClient:
         """
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                files = {"photo": (photo.filename, await photo.read(), photo.content_type)}
+                files = {
+                    "photo": (photo.filename, await photo.read(), photo.content_type)
+                }
 
                 response = await client.post(
                     f"{self.base_url}/api/measurements/validate", files=files

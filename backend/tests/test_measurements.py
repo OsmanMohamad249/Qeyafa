@@ -6,7 +6,6 @@ Run with: pytest tests/test_measurements.py
 """
 
 import io
-import pytest
 from fastapi.testclient import TestClient
 from main import app
 
@@ -57,7 +56,12 @@ def get_auth_token():
     # Register user
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "first_name": "Test", "last_name": "User"},
+        json={
+            "email": email,
+            "password": password,
+            "first_name": "Test",
+            "last_name": "User",
+        },
     )
 
     # Login
