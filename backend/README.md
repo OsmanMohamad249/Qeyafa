@@ -62,18 +62,37 @@ docker run --rm -p 8000:8000 \
 
 ## Configuration
 
-All configuration is managed through environment variables using Pydantic BaseSettings.
+All configuration is managed through environment variables using Pydantic BaseSettings with strict validation.
 
 ### Required Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string (e.g., `postgresql://user:pass@host:port/db`)
-- `SECRET_KEY`: Strong secret key for JWT signing (min 32 characters)
+- `SECRET_KEY`: Strong secret key for JWT signing (min 32 characters, no weak defaults allowed)
 
 ### Optional Environment Variables
-- `CORS_ORIGINS`: Comma-separated list of allowed CORS origins (default: localhost)
+- `ENVIRONMENT`: Application environment - `development`, `staging`, or `production` (default: development)
+  - **Production mode automatically disables DEBUG**
+- `CORS_ORIGINS`: Comma-separated list of allowed CORS origins (default: localhost only)
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: JWT token expiration (default: 30)
 - `AI_SERVICE_URL`: URL for AI model service (default: http://ai-models:8000)
+- `DEBUG`: Debug mode (default: true, automatically false in production)
 
-See `.env.example` for complete configuration template.
+### Environment-Specific Behavior
+
+**Development Mode** (`ENVIRONMENT=development`):
+- DEBUG enabled by default
+- Relaxed CORS for local development
+- Detailed error messages
+
+**Staging Mode** (`ENVIRONMENT=staging`):
+- Similar to development but can be configured for pre-production testing
+- DEBUG can be explicitly controlled
+
+**Production Mode** (`ENVIRONMENT=production`):
+- DEBUG automatically disabled (cannot be overridden)
+- Strict security validation enforced
+- Minimal error exposure
+
+See `.env.example` for complete configuration template with examples for each environment.
 
 ## API Endpoints
 
@@ -103,21 +122,70 @@ For tests with coverage:
 pytest tests/ --cov=. --cov-report=html
 ```
 
+**Note**: Database tests require a running PostgreSQL instance. Set up the database:
+```bash
+# Using Docker
+docker run -d --name tiraz-test-db \
+  -e POSTGRES_USER=tiraz \
+  -e POSTGRES_PASSWORD=tiraz_password \
+  -e POSTGRES_DB=tiraz_test_db \
+  -p 5432:5432 \
+  postgres:15
+
+# Or use docker-compose
+docker-compose up -d postgres
+```
+
+## Configuration Validation & Error Messages
+
+The application provides clear, actionable error messages for configuration issues:
+
+### Missing Required Fields
+```
+ValidationError: 2 validation errors for Settings
+DATABASE_URL
+  field required (type=value_error.missing)
+SECRET_KEY
+  field required (type=value_error.missing)
+```
+
+### Weak SECRET_KEY
+```
+ValidationError: SECRET_KEY appears to be a weak/default value. 
+Please set a strong secret key in your environment variables.
+```
+
+### Invalid ENVIRONMENT
+```
+ValidationError: ENVIRONMENT must be one of ['development', 'staging', 'production'], got: invalid-env
+```
+
+### Short SECRET_KEY
+```
+ValidationError: ensure this value has at least 32 characters
+```
+
+All errors are caught at startup, preventing the application from running with invalid configuration.
+
 ## Security Features
 
 ✅ **Secure Configuration**
-- Required environment variables with validation
+- Required environment variables with strict validation
 - No hardcoded secrets in code
 - Pydantic BaseSettings for type safety
+- Environment-specific security controls
+- Weak/default key detection and rejection
 
 ✅ **Authentication & Authorization**
 - JWT token-based authentication
 - Password hashing with bcrypt
 - Role-based access control (RBAC)
+- Secure token expiration
 
 ✅ **CORS Protection**
 - Configurable allowed origins
 - No wildcard origins by default
+- Environment-specific CORS policies
 
 ✅ **Input Validation**
 - Pydantic schemas for all endpoints
