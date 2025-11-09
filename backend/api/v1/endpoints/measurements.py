@@ -22,7 +22,7 @@ from services.ai_client import ai_client, AIServiceError
 router = APIRouter()
 
 # Configuration
-UPLOAD_DIR = "/app/uploads"
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
