@@ -2,12 +2,6 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy requirements
 COPY requirements.txt .
 
@@ -24,4 +18,4 @@ RUN mkdir -p data/input data/output
 EXPOSE 8000
 
 # Start the application
-CMD ["python", "measurement_model/api.py"]
+CMD ["uvicorn", "measurement_model.api:app", "--host", "0.0.0.0", "--port", "8000"]

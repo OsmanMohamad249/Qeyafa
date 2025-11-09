@@ -26,5 +26,11 @@ class Settings:
     # API
     API_V1_PREFIX: str = "/api/v1"
 
+    # AI Service
+    AI_SERVICE_URL: str = os.getenv(
+        "AI_SERVICE_URL",
+        "http://ai-models:8000",  # Default internal Docker service name
+    )
+
 
 settings = Settings()
