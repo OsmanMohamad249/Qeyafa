@@ -23,13 +23,13 @@ def upgrade() -> None:
     # Add is_superuser column
     op.add_column(
         "users",
-        sa.Column(
-            "is_superuser", sa.Boolean(), nullable=False, server_default="false"
-        ),
+        sa.Column("is_superuser", sa.Boolean(), nullable=False, server_default="false"),
     )
 
     # Add role column with enum type
-    op.execute("CREATE TYPE userrole AS ENUM ('admin', 'customer', 'designer', 'tailor')")
+    op.execute(
+        "CREATE TYPE userrole AS ENUM ('admin', 'customer', 'designer', 'tailor')"
+    )
     op.add_column(
         "users",
         sa.Column(
