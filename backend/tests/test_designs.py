@@ -44,7 +44,7 @@ def _create_user_and_login(role=UserRole.CUSTOMER):
 def test_list_designs_unauthenticated():
     """Test listing designs without authentication."""
     response = client.get("/api/v1/designs/")
-    
+
     # Should succeed - public endpoint
     assert response.status_code == 200
     assert isinstance(response.json(), list)
@@ -53,13 +53,14 @@ def test_list_designs_unauthenticated():
 def test_create_design_as_designer():
     """Test creating a design as a designer."""
     token = _create_user_and_login(UserRole.DESIGNER)
-    
+
     if not token:
         return
-    
+
     import time
+
     design_title = f"Test Design {int(time.time())}"
-    
+
     response = client.post(
         "/api/v1/designs/",
         json={
@@ -70,20 +71,21 @@ def test_create_design_as_designer():
         },
         headers={"Authorization": f"Bearer {token}"},
     )
-    
+
     assert response.status_code in [201, 403]
 
 
 def test_create_design_as_customer():
     """Test that customers cannot create designs."""
     token = _create_user_and_login(UserRole.CUSTOMER)
-    
+
     if not token:
         return
-    
+
     import time
+
     design_title = f"Test Design {int(time.time())}"
-    
+
     response = client.post(
         "/api/v1/designs/",
         json={
@@ -93,7 +95,7 @@ def test_create_design_as_customer():
         },
         headers={"Authorization": f"Bearer {token}"},
     )
-    
+
     # Should fail - only designers can create designs
     assert response.status_code == 403
 
@@ -101,8 +103,9 @@ def test_create_design_as_customer():
 def test_create_design_unauthenticated():
     """Test that unauthenticated users cannot create designs."""
     import time
+
     design_title = f"Test Design {int(time.time())}"
-    
+
     response = client.post(
         "/api/v1/designs/",
         json={
@@ -111,7 +114,7 @@ def test_create_design_unauthenticated():
             "price": 99.99,
         },
     )
-    
+
     # Should fail - authentication required
     assert response.status_code == 401
 
@@ -119,13 +122,14 @@ def test_create_design_unauthenticated():
 def test_create_design_with_negative_price():
     """Test that designs cannot be created with negative prices."""
     token = _create_user_and_login(UserRole.DESIGNER)
-    
+
     if not token:
         return
-    
+
     import time
+
     design_title = f"Test Design {int(time.time())}"
-    
+
     response = client.post(
         "/api/v1/designs/",
         json={
@@ -135,7 +139,7 @@ def test_create_design_with_negative_price():
         },
         headers={"Authorization": f"Bearer {token}"},
     )
-    
+
     # Should fail - price must be positive
     assert response.status_code == 422
 
@@ -144,15 +148,15 @@ def test_get_design_details():
     """Test getting design details."""
     # First, list designs to get an ID (if any exist)
     list_response = client.get("/api/v1/designs/")
-    
+
     if list_response.status_code == 200:
         designs = list_response.json()
-        
+
         if len(designs) > 0:
             # Get first design details
             design_id = designs[0]["id"]
             response = client.get(f"/api/v1/designs/{design_id}")
-            
+
             assert response.status_code == 200
             data = response.json()
             assert data["id"] == design_id
@@ -162,14 +166,14 @@ def test_get_nonexistent_design():
     """Test getting a design that doesn't exist."""
     fake_id = "00000000-0000-0000-0000-000000000000"
     response = client.get(f"/api/v1/designs/{fake_id}")
-    
+
     assert response.status_code == 404
 
 
 def test_list_designs_with_pagination():
     """Test listing designs with pagination parameters."""
     response = client.get("/api/v1/designs/?skip=0&limit=10")
-    
+
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
@@ -177,7 +181,7 @@ def test_list_designs_with_pagination():
 def test_list_designs_with_style_filter():
     """Test listing designs filtered by style type."""
     response = client.get("/api/v1/designs/?style_type=modern")
-    
+
     assert response.status_code == 200
     assert isinstance(response.json(), list)
 
@@ -185,11 +189,11 @@ def test_list_designs_with_style_filter():
 def test_list_designs_with_active_filter():
     """Test listing only active designs."""
     response = client.get("/api/v1/designs/?active_only=true")
-    
+
     assert response.status_code == 200
     designs = response.json()
     assert isinstance(designs, list)
-    
+
     # All designs should be active
     for design in designs:
         assert design.get("is_active") is True

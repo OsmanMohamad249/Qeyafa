@@ -28,7 +28,9 @@ def upgrade() -> None:
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("image_url", sa.String(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -51,7 +53,9 @@ def upgrade() -> None:
         sa.Column("image_url", sa.String(), nullable=True),
         sa.Column("designer_id", sa.UUID(), nullable=False),
         sa.Column("category_id", sa.UUID(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -69,7 +73,9 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_designs_title"), "designs", ["title"], unique=False)
-    op.create_index(op.f("ix_designs_style_type"), "designs", ["style_type"], unique=False)
+    op.create_index(
+        op.f("ix_designs_style_type"), "designs", ["style_type"], unique=False
+    )
 
 
 def downgrade() -> None:

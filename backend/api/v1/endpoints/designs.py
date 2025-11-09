@@ -27,7 +27,7 @@ def list_designs(
 ):
     """
     List all designs with optional filtering.
-    
+
     - **skip**: Number of designs to skip (for pagination)
     - **limit**: Maximum number of designs to return
     - **style_type**: Filter designs by style type
@@ -35,16 +35,16 @@ def list_designs(
     - **active_only**: If True, only return active designs
     """
     query = db.query(Design)
-    
+
     if active_only:
         query = query.filter(Design.is_active == True)
-    
+
     if style_type:
         query = query.filter(Design.style_type == style_type)
-    
+
     if category_id:
         query = query.filter(Design.category_id == category_id)
-    
+
     designs = query.order_by(Design.created_at.desc()).offset(skip).limit(limit).all()
     return designs
 
@@ -55,13 +55,13 @@ def get_design(design_id: str, db: Session = Depends(get_db)):
     Get a specific design by ID.
     """
     design = db.query(Design).filter(Design.id == design_id).first()
-    
+
     if not design:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Design not found",
         )
-    
+
     return design
 
 
@@ -73,22 +73,20 @@ def create_design(
 ):
     """
     Create a new design (designers only).
-    
+
     Requires designer role.
     """
     # Verify category exists if provided
     if design_data.category_id:
         category = (
-            db.query(Category)
-            .filter(Category.id == design_data.category_id)
-            .first()
+            db.query(Category).filter(Category.id == design_data.category_id).first()
         )
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Category not found",
             )
-    
+
     # Create new design
     new_design = Design(
         title=design_data.title,
@@ -99,11 +97,11 @@ def create_design(
         category_id=design_data.category_id,
         designer_id=current_user.id,
     )
-    
+
     db.add(new_design)
     db.commit()
     db.refresh(new_design)
-    
+
     return new_design
 
 
@@ -116,46 +114,44 @@ def update_design(
 ):
     """
     Update a design (designers can only update their own designs).
-    
+
     Requires designer role and ownership of the design.
     """
     design = db.query(Design).filter(Design.id == design_id).first()
-    
+
     if not design:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Design not found",
         )
-    
+
     # Check if user owns this design (unless superuser)
     if design.designer_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only update your own designs",
         )
-    
+
     # Update fields if provided
     update_data = design_data.dict(exclude_unset=True)
-    
+
     # Verify category exists if being updated
     if "category_id" in update_data and update_data["category_id"]:
         category = (
-            db.query(Category)
-            .filter(Category.id == update_data["category_id"])
-            .first()
+            db.query(Category).filter(Category.id == update_data["category_id"]).first()
         )
         if not category:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Category not found",
             )
-    
+
     for field, value in update_data.items():
         setattr(design, field, value)
-    
+
     db.commit()
     db.refresh(design)
-    
+
     return design
 
 
@@ -167,25 +163,25 @@ def delete_design(
 ):
     """
     Delete a design (designers can only delete their own designs).
-    
+
     Requires designer role and ownership of the design.
     """
     design = db.query(Design).filter(Design.id == design_id).first()
-    
+
     if not design:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Design not found",
         )
-    
+
     # Check if user owns this design (unless superuser)
     if design.designer_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You can only delete your own designs",
         )
-    
+
     db.delete(design)
     db.commit()
-    
+
     return None

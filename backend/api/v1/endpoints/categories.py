@@ -24,16 +24,16 @@ def list_categories(
 ):
     """
     List all categories.
-    
+
     - **skip**: Number of categories to skip (for pagination)
     - **limit**: Maximum number of categories to return
     - **active_only**: If True, only return active categories
     """
     query = db.query(Category)
-    
+
     if active_only:
         query = query.filter(Category.is_active == True)
-    
+
     categories = query.offset(skip).limit(limit).all()
     return categories
 
@@ -44,13 +44,13 @@ def get_category(category_id: str, db: Session = Depends(get_db)):
     Get a specific category by ID.
     """
     category = db.query(Category).filter(Category.id == category_id).first()
-    
+
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found",
         )
-    
+
     return category
 
 
@@ -62,20 +62,20 @@ def create_category(
 ):
     """
     Create a new category (admin only).
-    
+
     Requires admin privileges.
     """
     # Check if category with same name already exists
     existing_category = (
         db.query(Category).filter(Category.name == category_data.name).first()
     )
-    
+
     if existing_category:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Category with this name already exists",
         )
-    
+
     # Create new category
     new_category = Category(
         name=category_data.name,
@@ -83,11 +83,11 @@ def create_category(
         image_url=category_data.image_url,
         is_active=category_data.is_active,
     )
-    
+
     db.add(new_category)
     db.commit()
     db.refresh(new_category)
-    
+
     return new_category
 
 
@@ -100,20 +100,20 @@ def update_category(
 ):
     """
     Update a category (admin only).
-    
+
     Requires admin privileges.
     """
     category = db.query(Category).filter(Category.id == category_id).first()
-    
+
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found",
         )
-    
+
     # Update fields if provided
     update_data = category_data.dict(exclude_unset=True)
-    
+
     # Check for name uniqueness if name is being updated
     if "name" in update_data and update_data["name"] != category.name:
         existing_category = (
@@ -124,13 +124,13 @@ def update_category(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Category with this name already exists",
             )
-    
+
     for field, value in update_data.items():
         setattr(category, field, value)
-    
+
     db.commit()
     db.refresh(category)
-    
+
     return category
 
 
@@ -142,18 +142,18 @@ def delete_category(
 ):
     """
     Delete a category (admin only).
-    
+
     Requires admin privileges.
     """
     category = db.query(Category).filter(Category.id == category_id).first()
-    
+
     if not category:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found",
         )
-    
+
     db.delete(category)
     db.commit()
-    
+
     return None
