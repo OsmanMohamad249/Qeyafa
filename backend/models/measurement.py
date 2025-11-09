@@ -5,8 +5,8 @@ Measurement model.
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, DateTime, Float, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -20,8 +20,8 @@ class Measurement(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    measurements = Column(JSON, nullable=False)
-    image_paths = Column(JSON, nullable=False)
+    measurements = Column(JSONB, nullable=False)
+    image_paths = Column(JSONB, nullable=False)
     processed_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

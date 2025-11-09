@@ -7,6 +7,7 @@ import uuid
 from typing import Dict
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
+import aiofiles
 
 from core.database import get_db
 from core.deps import get_current_user
@@ -67,10 +68,10 @@ async def save_upload_file(file: UploadFile, user_id: uuid.UUID) -> str:
     unique_filename = f"{uuid.uuid4()}.{file_ext}"
     file_path = os.path.join(user_dir, unique_filename)
 
-    # Save file
+    # Save file using aiofiles to prevent blocking
     contents = await file.read()
-    with open(file_path, "wb") as f:
-        f.write(contents)
+    async with aiofiles.open(file_path, 'wb') as f:
+        await f.write(contents)
 
     # Reset file pointer for potential reuse
     await file.seek(0)
