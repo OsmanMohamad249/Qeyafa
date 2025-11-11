@@ -1,9 +1,10 @@
 // lib/screens/splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/auth_provider.dart';
-import 'login_screen.dart';
-import 'home_screen.dart';
+import '../../features/auth/presentation/auth_provider.dart';
+import '../../features/auth/domain/auth_state.dart';
+import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/home_screen.dart';
 import '../designs/designer_dashboard_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -27,24 +28,36 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     
     if (!mounted) return;
     
-    if (authState.isAuthenticated) {
-      final user = authState.user;
-      
-      // Route based on user role
-      if (user != null && user.isDesigner) {
+    authState.when(
+      initial: () {
+        // Do nothing, still loading
+      },
+      loading: () {
+        // Do nothing, still loading
+      },
+      authenticated: (user) {
+        // Route based on user role
+        if (user.isDesigner) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => DesignerDashboardScreen()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      },
+      unauthenticated: () {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => DesignerDashboardScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
-      } else {
+      },
+      error: (message) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => HomeScreen()),
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
-      }
-    } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => LoginScreen()),
-      );
-    }
+      },
+    );
   }
   
   @override

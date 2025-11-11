@@ -1,7 +1,8 @@
 // lib/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/auth_provider.dart';
+import '../../features/auth/presentation/auth_provider.dart';
+import '../../features/auth/domain/auth_state.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   @override
@@ -51,16 +52,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
       );
       Navigator.of(context).pop();
-    } else {
-      final error = ref.read(authStateProvider).error;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error ?? 'Registration failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    } else if (mounted) {
+      final authState = ref.read(authStateProvider);
+      String errorMessage = 'Registration failed';
+      authState.whenOrNull(
+        error: (message) => errorMessage = message,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
   
