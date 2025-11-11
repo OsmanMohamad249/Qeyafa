@@ -1,7 +1,8 @@
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/auth_provider.dart';
+import '../../features/auth/presentation/auth_provider.dart';
+import '../../features/auth/domain/auth_state.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
 import '../designs/designer_dashboard_screen.dart';
@@ -38,27 +39,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     
     if (success && mounted) {
       // Get the user's role and navigate accordingly
-      final user = ref.read(authStateProvider).user;
+      final authState = ref.read(authStateProvider);
       
-      if (user != null && user.isDesigner) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => DesignerDashboardScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => HomeScreen()),
-        );
-      }
-    } else {
-      final error = ref.read(authStateProvider).error;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error ?? 'Login failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      authState.whenOrNull(
+        authenticated: (user) {
+          if (user.isDesigner) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => DesignerDashboardScreen()),
+            );
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => HomeScreen()),
+            );
+          }
+        },
+      );
+    } else if (mounted) {
+      final authState = ref.read(authStateProvider);
+      String errorMessage = 'Login failed';
+      authState.whenOrNull(
+        error: (message) => errorMessage = message,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
   
