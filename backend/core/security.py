@@ -23,7 +23,7 @@ def hash_password(password: str) -> str:
     # Bcrypt limitation: maximum 72 bytes
     # This should already be validated by Pydantic schemas (max_length=72)
     # but we add this as a safety check
-    if len(password.encode('utf-8')) > 72:
+    if len(password.encode("utf-8")) > 72:
         raise ValueError("Password cannot be longer than 72 bytes")
     return pwd_context.hash(password)
 

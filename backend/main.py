@@ -13,7 +13,7 @@ cors_origins = settings.CORS_ORIGINS.copy()
 # Add GitHub Codespaces pattern support
 # Pattern: https://*.app.github.dev
 cors_origins_regex = None
-if any('github.dev' in origin for origin in cors_origins):
+if any("github.dev" in origin for origin in cors_origins):
     # If any GitHub Codespaces URL is configured, allow all Codespaces URLs
     cors_origins_regex = r"https://.*\.app\.github\.dev"
 
