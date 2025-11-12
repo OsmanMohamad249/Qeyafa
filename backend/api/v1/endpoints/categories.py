@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from core.deps import get_current_admin_user
+from core.deps import is_designer_or_admin
 from models.category import Category
 from models.user import User
 from schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
@@ -58,12 +58,12 @@ def get_category(category_id: str, db: Session = Depends(get_db)):
 def create_category(
     category_data: CategoryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(is_designer_or_admin),
 ):
     """
-    Create a new category (admin only).
+    Create a new category (designers and admins).
 
-    Requires admin privileges.
+    Requires designer or admin role.
     """
     # Check if category with same name already exists
     existing_category = (
@@ -96,12 +96,12 @@ def update_category(
     category_id: str,
     category_data: CategoryUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(is_designer_or_admin),
 ):
     """
-    Update a category (admin only).
+    Update a category (designers and admins).
 
-    Requires admin privileges.
+    Requires designer or admin role.
     """
     category = db.query(Category).filter(Category.id == category_id).first()
 
@@ -138,12 +138,12 @@ def update_category(
 def delete_category(
     category_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_admin_user),
+    current_user: User = Depends(is_designer_or_admin),
 ):
     """
-    Delete a category (admin only).
+    Delete a category (designers and admins).
 
-    Requires admin privileges.
+    Requires designer or admin role.
     """
     category = db.query(Category).filter(Category.id == category_id).first()
 
