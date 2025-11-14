@@ -3,6 +3,7 @@ Measurement schemas for API request/response validation.
 """
 
 from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Dict
 from datetime import datetime
 import uuid
@@ -42,8 +43,7 @@ class MeasurementProcessResponse(BaseModel):
     confidence_score: float
     processed_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MeasurementResponse(BaseModel):
@@ -56,5 +56,4 @@ class MeasurementResponse(BaseModel):
     processed_at: datetime
     confidence_score: float
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

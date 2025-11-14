@@ -4,8 +4,7 @@ API v1 router.
 
 from fastapi import APIRouter
 
-from api.v1.endpoints import auth, users, login, measurements, categories, designs
-from api.v1.endpoints import admin
+from backend.api.v1.endpoints import auth, users, login, measurements, categories, designs, admin
 
 api_router = APIRouter()
 

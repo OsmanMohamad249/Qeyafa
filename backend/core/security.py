@@ -7,7 +7,7 @@ import hashlib
 import bcrypt
 from jose import JWTError, jwt
 
-from core.config import settings
+from backend.core.config import settings
 
 
 def hash_password(password: str) -> str:
@@ -46,10 +46,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
+    from datetime import UTC
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
 

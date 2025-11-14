@@ -2,13 +2,16 @@
 Configuration settings for the application.
 """
 
-from typing import List
+import os
+from typing import List, Optional
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator
+from pydantic import Field, validator, field_validator
+from pydantic import ValidationInfo
 
 
 class Settings(BaseSettings):
     """Application settings with environment variable validation"""
+    REDIS_URL: str = Field(default=None, description="Redis connection URL", json_schema_extra={"env": "REDIS_URL"})
 
     # Environment Configuration
     ENVIRONMENT: str = Field(
@@ -22,10 +25,9 @@ class Settings(BaseSettings):
         description="Database connection URL (e.g., postgresql://user:pass@host:port/db)",
     )
     # Extra fields to avoid Pydantic v2 validation errors
-    POSTGRES_USER: str = Field(default=None, description="Postgres username", env="POSTGRES_USER")
-    POSTGRES_PASSWORD: str = Field(default=None, description="Postgres password", env="POSTGRES_PASSWORD")
-    POSTGRES_DB: str = Field(default=None, description="Postgres database name", env="POSTGRES_DB")
-    CORS_ORIGINS: str = Field(default=None, description="CORS origins (legacy)", env="CORS_ORIGINS")
+    POSTGRES_USER: Optional[str] = Field(default=None, description="Postgres username", json_schema_extra={"env": "POSTGRES_USER"})
+    POSTGRES_PASSWORD: Optional[str] = Field(default=None, description="Postgres password", json_schema_extra={"env": "POSTGRES_PASSWORD"})
+    POSTGRES_DB: Optional[str] = Field(default=None, description="Postgres database name", json_schema_extra={"env": "POSTGRES_DB"})
 
     # Security - REQUIRED, no default for security
     SECRET_KEY: str = Field(
@@ -54,7 +56,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS_STR: str = Field(
         default="http://localhost:3000,http://localhost:8080",
         description="Allowed CORS origins (comma-separated in env)",
-        env="CORS_ORIGINS",
+        json_schema_extra={"env": "CORS_ORIGINS"},
     )
 
     # AI Service - Optional with sensible default
@@ -69,17 +71,15 @@ class Settings(BaseSettings):
         description="Debug mode (automatically False in production)",
     )
 
-    @validator("ENVIRONMENT")
-    def validate_environment(cls, v):
-        """Validate ENVIRONMENT is one of the allowed values"""
+    @field_validator("ENVIRONMENT", mode="before")
+    def validate_environment(cls, v, info: ValidationInfo):
         allowed = ["development", "staging", "production"]
         if v.lower() not in allowed:
             raise ValueError(f"ENVIRONMENT must be one of {allowed}, got: {v}")
         return v.lower()
 
-    @validator("SECRET_KEY")
-    def validate_secret_key(cls, v):
-        """Validate SECRET_KEY is not a default/weak value"""
+    @field_validator("SECRET_KEY", mode="before")
+    def validate_secret_key(cls, v, info: ValidationInfo):
         weak_keys = [
             "your-secret-key",
             "your-secret-key-change-this-in-production",
@@ -94,12 +94,11 @@ class Settings(BaseSettings):
             )
         return v
 
-    @validator("DEBUG", pre=True, always=True, allow_reuse=True)
-    def set_debug_mode(cls, v, values):
-        """Automatically set DEBUG to False in production environment"""
-        if "ENVIRONMENT" in values and values["ENVIRONMENT"] == "production":
+    @field_validator("DEBUG", mode="before")
+    def set_debug_mode(cls, v, info: ValidationInfo):
+        env = info.data.get("ENVIRONMENT") if info.data else None
+        if env == "production":
             return False
-        # Allow explicit override for development/staging
         return v
 
     @property
@@ -122,10 +121,12 @@ class Settings(BaseSettings):
         """Check if running in production mode"""
         return self.ENVIRONMENT == "production"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
+    model_config = {
+        "env_file": [".env", ".env.test"] if os.getenv("TESTING") else ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": True,
+        "extra": "ignore",
+    }
 
 
 settings = Settings()

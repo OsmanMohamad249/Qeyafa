@@ -8,7 +8,7 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.sql import func
 
-from core.database import Base
+from backend.core.database import Base
 
 
 class Measurement(Base):

@@ -40,7 +40,7 @@ ENV/
 instance/
 
 # Environment variables
-# .env (allowed for development setup as per task requirements)
+.env
 .env.local
 
 # Backup files from sed

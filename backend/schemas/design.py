@@ -6,6 +6,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class DesignCreate(BaseModel):
@@ -57,6 +58,4 @@ class DesignResponse(BaseModel):
     category_id: Optional[UUID] = None
     is_active: bool
     created_at: datetime
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

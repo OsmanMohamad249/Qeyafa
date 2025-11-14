@@ -6,7 +6,7 @@ import httpx
 from typing import Dict, Any
 from fastapi import UploadFile
 
-from core.config import settings
+from backend.core.config import settings
 
 
 class AIServiceError(Exception):

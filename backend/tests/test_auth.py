@@ -5,20 +5,39 @@ Note: These tests require a running database.
 Run with: pytest tests/test_auth.py
 """
 
+
+
+
+
+
+import pytest
 from fastapi.testclient import TestClient
-from main import app
+from backend.main import app
+import os
+from backend.models.roles import UserRole
 
-client = TestClient(app)
+@pytest.fixture(scope="function", autouse=True)
+def disable_rate_limiter(monkeypatch):
+    """
+    Disable FastAPILimiter for all tests to avoid event loop and 429 errors.
+    """
+    try:
+        import fastapi_limiter.depends
+        async def no_op_call(self, request, response):
+            return None
+        monkeypatch.setattr(fastapi_limiter.depends.RateLimiter, "__call__", no_op_call)
+    except ImportError:
+        pass
 
 
-def test_health_endpoint():
+def test_health_endpoint(client):
     """Test health endpoint."""
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
 
 
-def test_register_user():
+def test_register_user(client):
     """Test user registration."""
     # Use a unique email for each test run
     import time
@@ -44,26 +63,31 @@ def test_register_user():
         assert data["email"] == email
 
 
-def test_register_duplicate_email():
+def test_register_duplicate_email(client):
     """Test registering with duplicate email."""
     email = "duplicate@example.com"
     user_data = {
         "email": email,
         "password": "testpass123",
+        "first_name": "Test",
+        "last_name": "User",
+        "role": "customer",
     }
 
     # First registration
     response1 = client.post("/api/v1/auth/register", json=user_data)
+    print("First registration response:", response1.json())
 
     # Second registration with same email
     response2 = client.post("/api/v1/auth/register", json=user_data)
+    print("Second registration response:", response2.json())
 
     # Second one should fail
     assert response2.status_code == 400
     assert "already registered" in response2.json()["detail"].lower()
 
 
-def test_login_success():
+def test_login_success(client):
     """Test successful login."""
     # First register a user
     import time
@@ -71,7 +95,14 @@ def test_login_success():
     email = f"login_test_{int(time.time())}@example.com"
     password = "testpass123"
 
-    client.post("/api/v1/auth/register", json={"email": email, "password": password})
+    reg_response = client.post("/api/v1/auth/register", json={
+        "email": email,
+        "password": password,
+        "first_name": "Test",
+        "last_name": "User",
+        "role": "customer",
+    })
+    print("Registration response:", reg_response.json())
 
     # Now try to login
     response = client.post(
@@ -85,7 +116,7 @@ def test_login_success():
     assert data["token_type"] == "bearer"
 
 
-def test_login_wrong_password():
+def test_login_wrong_password(client):
     """Test login with wrong password."""
     response = client.post(
         "/api/v1/auth/login",
@@ -95,7 +126,7 @@ def test_login_wrong_password():
     assert response.status_code == 401
 
 
-def test_get_current_user_authenticated():
+def test_get_current_user_authenticated(client):
     """Test getting current user info with valid token."""
     # Register and login
     import time
@@ -103,15 +134,18 @@ def test_get_current_user_authenticated():
     email = f"current_user_{int(time.time())}@example.com"
     password = "testpass123"
 
-    client.post(
+    reg_response = client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
             "password": password,
             "first_name": "Current",
             "last_name": "User",
+            "role": "customer",
         },
     )
+    print("Registration response:", reg_response.json())
+    
 
     login_response = client.post(
         "/api/v1/auth/login", data={"username": email, "password": password}
@@ -131,14 +165,14 @@ def test_get_current_user_authenticated():
     assert data["last_name"] == "User"
 
 
-def test_get_current_user_unauthenticated():
+def test_get_current_user_unauthenticated(client):
     """Test getting current user without token."""
     response = client.get("/api/v1/users/me")
 
     assert response.status_code == 401
 
 
-def test_get_current_user_invalid_token():
+def test_get_current_user_invalid_token(client):
     """Test getting current user with invalid token."""
     response = client.get(
         "/api/v1/users/me", headers={"Authorization": "Bearer invalid_token"}
@@ -147,7 +181,7 @@ def test_get_current_user_invalid_token():
     assert response.status_code == 401
 
 
-def test_register_password_too_short():
+def test_register_password_too_short(client):
     """Test registration with password shorter than 8 characters."""
     import time
 
@@ -168,7 +202,7 @@ def test_register_password_too_short():
     assert any("password" in str(error).lower() for error in error_detail)
 
 
-def test_register_password_too_long():
+def test_register_password_too_long(client):
     """Test registration with password longer than 72 characters."""
     import time
 
@@ -183,6 +217,7 @@ def test_register_password_too_long():
             "password": long_password,
             "first_name": "Test",
             "last_name": "User",
+            "role": UserRole.CUSTOMER,
         },
     )
 
@@ -191,7 +226,7 @@ def test_register_password_too_long():
     assert any("password" in str(error).lower() for error in error_detail)
 
 
-def test_register_password_valid_lengths():
+def test_register_password_valid_lengths(client):
     """Test registration with valid password lengths (8 and 72 characters)."""
     import time
 
@@ -204,6 +239,7 @@ def test_register_password_valid_lengths():
             "password": "12345678",  # Exactly 8 characters
             "first_name": "Test",
             "last_name": "User",
+            "role": UserRole.CUSTOMER,
         },
     )
 
@@ -218,6 +254,7 @@ def test_register_password_valid_lengths():
             "password": "a" * 72,  # Exactly 72 characters
             "first_name": "Test",
             "last_name": "User",
+            "role": UserRole.CUSTOMER,
         },
     )
 

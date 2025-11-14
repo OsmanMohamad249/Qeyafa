@@ -5,14 +5,45 @@ Note: These tests require a running database.
 Run with: pytest tests/test_rbac.py
 """
 
+
+
+
 from fastapi.testclient import TestClient
-from main import app
-from models.roles import UserRole
+from backend.main import app
+from backend.models.roles import UserRole
+import redis.asyncio as redis
+from fastapi_limiter import FastAPILimiter
+import asyncio
+import os
 
-client = TestClient(app)
+
+def get_auth_token(client, role="customer"):
+    """Helper function to get authentication token."""
+    import time
+    email = f"test_{role}_{int(time.time())}@example.com"
+    password = "testpass123"
+
+    # Register user
+    reg_response = client.post("/api/v1/auth/register", json={
+        "email": email,
+        "password": password,
+        "first_name": "Test",
+        "last_name": "User",
+        "role": role,
+    })
+
+    # Login to get token
+    login_response = client.post(
+        "/api/v1/auth/login",
+        data={"username": email, "password": password}
+    )
+
+    if login_response.status_code == 200:
+        return login_response.json()["access_token"]
+    return None
 
 
-def test_register_user_with_default_customer_role():
+def test_register_user_with_default_customer_role(client):
     """Test user registration defaults to CUSTOMER role."""
     import time
 
@@ -47,7 +78,7 @@ def test_register_user_with_default_customer_role():
         assert data["is_superuser"] is False
 
 
-def test_register_user_with_designer_role():
+def test_register_user_with_designer_role(client):
     """Test user registration with DESIGNER role."""
     import time
 
@@ -83,7 +114,7 @@ def test_register_user_with_designer_role():
         assert data["is_superuser"] is False
 
 
-def test_register_user_with_tailor_role():
+def test_register_user_with_tailor_role(client):
     """Test user registration with TAILOR role."""
     import time
 
@@ -119,7 +150,7 @@ def test_register_user_with_tailor_role():
         assert data["is_superuser"] is False
 
 
-def test_user_response_includes_role_fields():
+def test_user_response_includes_role_fields(client):
     """Test that UserResponse includes is_superuser and role fields."""
     import time
 
@@ -156,7 +187,7 @@ def test_user_response_includes_role_fields():
     assert data["is_active"] is True
 
 
-def test_user_cannot_set_superuser_flag_during_registration():
+def test_user_cannot_set_superuser_flag_during_registration(client):
     """Test that is_superuser is always False during public registration."""
     import time
 

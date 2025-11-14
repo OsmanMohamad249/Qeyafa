@@ -90,6 +90,23 @@ ruff: For Python code error linting.
 
 black: To ensure consistent code formatting.
 
+## 📚 Documentation
+- [Backend API & Setup](backend/README.md)
+- [Mobile App Guide](mobile-app/README.md)
+- [Project Docs](docs/)
+
+## 🔗 Key Endpoints
+- Backend Health: `GET /health`
+- Register: `POST /api/v1/auth/register` (customer only)
+- Admin Create User: `POST /api/v1/admin/admin-create-user` (admin only)
+- Login: `POST /api/v1/auth/login`
+
+## 🔒 Security & Environment
+- Requires strong `SECRET_KEY` (min 32 chars, no weak defaults)
+- Set `DATABASE_URL` for PostgreSQL connection
+- All config via `.env` (see `backend/.env.example`)
+- Role-based access enforced
+
 🤝 Contributing
 
 Create a new feature branch (git checkout -b feat/my-new-feature)

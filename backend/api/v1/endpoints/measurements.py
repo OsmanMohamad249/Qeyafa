@@ -8,15 +8,15 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from sqlalchemy.orm import Session
 import aiofiles
 
-from core.database import get_db
-from core.deps import get_current_user
-from models.user import User
-from models.measurement import Measurement
-from schemas.measurement import (
+from backend.core.database import get_db
+from backend.core.deps import get_current_user
+from backend.models.user import User
+from backend.models.measurement import Measurement
+from backend.schemas.measurement import (
     MeasurementProcessResponse,
     MeasurementUploadResponse,
 )
-from services.ai_client import ai_client, AIServiceError
+from backend.services.ai_client import ai_client, AIServiceError
 
 router = APIRouter()
 

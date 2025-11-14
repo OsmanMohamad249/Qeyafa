@@ -11,13 +11,54 @@ Run with: pytest tests/test_user_roles.py
 """
 
 import time
+
+
+
 from fastapi.testclient import TestClient
-from main import app
+from backend.main import app
+import redis.asyncio as redis
+from fastapi_limiter import FastAPILimiter
+import asyncio
+import os
 
-client = TestClient(app)
+import time
 
 
-def test_user_registration_defaults_to_customer():
+
+from fastapi.testclient import TestClient
+from backend.main import app
+import redis.asyncio as redis
+from fastapi_limiter import FastAPILimiter
+import asyncio
+import os
+
+
+def get_auth_token(client):
+    """Helper function to get authentication token."""
+    email = f"test_user_{int(time.time())}@example.com"
+    password = "testpass123"
+
+    # Register user
+    reg_response = client.post("/api/v1/auth/register", json={
+        "email": email,
+        "password": password,
+        "first_name": "Test",
+        "last_name": "User",
+        "role": "customer",
+    })
+
+    # Login to get token
+    login_response = client.post(
+        "/api/v1/auth/login",
+        data={"username": email, "password": password}
+    )
+
+    if login_response.status_code == 200:
+        return login_response.json()["access_token"]
+    return None
+
+
+def test_user_registration_defaults_to_customer(client):
     """Test that new users created via POST /users/ have CUSTOMER role by default."""
     email = f"customer_{int(time.time())}@example.com"
     password = "testpass123"
@@ -47,7 +88,7 @@ def test_user_registration_defaults_to_customer():
     assert data["is_superuser"] is False
 
 
-def test_user_can_login():
+def test_user_can_login(client):
     """Test that a user can login via POST /login/access-token."""
     email = f"login_{int(time.time())}@example.com"
     password = "testpass123"
@@ -81,7 +122,7 @@ def test_user_can_login():
     assert len(data["access_token"]) > 0
 
 
-def test_users_me_returns_role():
+def test_users_me_returns_role(client):
     """Test that GET /users/me returns user data including role."""
     email = f"me_{int(time.time())}@example.com"
     password = "testpass123"
@@ -125,7 +166,7 @@ def test_users_me_returns_role():
     assert data["role"] == "customer"
 
 
-def test_login_wrong_credentials():
+def test_login_wrong_credentials(client):
     """Test that login fails with wrong credentials."""
     response = client.post(
         "/api/v1/login/access-token",
@@ -139,14 +180,14 @@ def test_login_wrong_credentials():
     assert "Incorrect email or password" in response.json()["detail"]
 
 
-def test_users_me_without_token():
+def test_users_me_without_token(client):
     """Test that GET /users/me fails without authentication."""
     response = client.get("/api/v1/users/me")
 
     assert response.status_code == 401
 
 
-def test_users_me_with_invalid_token():
+def test_users_me_with_invalid_token(client):
     """Test that GET /users/me fails with invalid token."""
     response = client.get(
         "/api/v1/users/me",
@@ -156,7 +197,7 @@ def test_users_me_with_invalid_token():
     assert response.status_code == 401
 
 
-def test_duplicate_email_registration():
+def test_duplicate_email_registration(client):
     """Test that registering with duplicate email fails."""
     email = f"duplicate_{int(time.time())}@example.com"
     user_data = {
