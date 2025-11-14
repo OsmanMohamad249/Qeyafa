@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/admin-create-user", response_model=dict, status_code=status.HTTP_201_CREATED)
 def admin_create_user(user_data: UserRegisterWithRole, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin_user)):
     # Only allow designer or admin roles
-    if str(user_data.role).lower() not in ["designer", "admin"]:
+    if user_data.role not in [UserRole.DESIGNER, UserRole.ADMIN]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only designer or admin roles allowed via this endpoint."
