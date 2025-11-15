@@ -41,6 +41,4 @@ jobs:
       - name: Analyze
         run: |
           cd mobile-app
-        with:
-          flutter-version: 'stable
-
+          flutter analyze --fatal-warnings
