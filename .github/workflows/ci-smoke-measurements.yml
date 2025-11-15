@@ -73,6 +73,12 @@ jobs:
           # ensure expected keys exist
           echo "$BODY" | jq -e '.measurements and .confidence_score' >/dev/null
 
+      - name: Verify DB persistence (query from backend)
+        run: |
+          set -euo pipefail
+          echo "Verifying measurement was persisted in DB (using backend container)"
+            docker compose exec -T backend python /workspaces/Qeyafa/backend/ci/check_db.py
+
       - name: Tear down compose services
         if: always()
         run: |
