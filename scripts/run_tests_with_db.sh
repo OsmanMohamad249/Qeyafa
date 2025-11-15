@@ -152,6 +152,7 @@ if [ -f "$ENV_FILE" ]; then
   mv "$ENV_FILE" "${ENV_FILE}.bak"
 fi
 # Run tests (adjust pytest args as needed)
-PYTHONPATH=backend pytest -q "$@"
+# Export SECRET_KEY and TESTING explicitly on the pytest process invocation to ensure pydantic picks them up
+SECRET_KEY="$SECRET_KEY" TESTING=true DATABASE_URL="$DATABASE_URL" PYTHONPATH=backend pytest -q "$@"
 
 echo "Tests finished"
