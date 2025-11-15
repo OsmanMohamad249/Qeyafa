@@ -31,15 +31,11 @@ class MockRateLimiter:
         return None
 
 # Initialize FastAPILimiter with mock redis before anything else
-import asyncio
+# Prepare a module-level mock redis instance (do not init FastAPILimiter here)
 mock_redis = MockRedis()
-asyncio.run(fastapi_limiter.FastAPILimiter.init(mock_redis))
 
-# Monkey patch RateLimiter early so module-level imports pick it up
+# Monkey patch RateLimiter early so imports that happen later pick it up
 fastapi_limiter.depends.RateLimiter = MockRateLimiter
-
-# Import the application after the RateLimiter is mocked
-from main import app as main_app
 
 
 @pytest.fixture(scope="session")
