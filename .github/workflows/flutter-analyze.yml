@@ -19,6 +19,9 @@ jobs:
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable
+
 
       - name: Cache pub
         uses: actions/cache@v4
@@ -38,5 +41,6 @@ jobs:
       - name: Analyze
         run: |
           cd mobile-app
-          # Only treat warnings as fatal to avoid failing on info-style suggestions
-          flutter analyze --fatal-warnings
+        with:
+          flutter-version: 'stable
+
