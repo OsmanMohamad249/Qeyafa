@@ -37,6 +37,12 @@ mock_redis = MockRedis()
 # Monkey patch RateLimiter early so imports that happen later pick it up
 fastapi_limiter.depends.RateLimiter = MockRateLimiter
 
+# As a safety-net for tests, patch FastAPILimiter.__call__ to a noop when tests run
+async def _fastapi_limiter_noop(self, request, response):
+    return None
+
+fastapi_limiter.FastAPILimiter.__call__ = _fastapi_limiter_noop
+
 
 @pytest.fixture(scope="session")
 def app():
