@@ -108,9 +108,14 @@ def setup_database():
     """
     from core.database import Base, engine
     from core.config import settings
+    from alembic.config import Config
+    from alembic import command
+    import os
 
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
+    # Run Alembic migrations to create the test schema (use settings.DATABASE_URL)
+    alembic_ini_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'alembic.ini'))
+    alembic_cfg = Config(alembic_ini_path)
+    command.upgrade(alembic_cfg, "head")
 
     # Create test admin user
     from core.security import hash_password
@@ -139,5 +144,8 @@ def setup_database():
 
     yield
 
-    # Drop all tables after test
-    Base.metadata.drop_all(bind=engine)
+    # Try to teardown by downgrading migrations to base. If that fails, fall back to drop_all.
+    try:
+        command.downgrade(alembic_cfg, "base")
+    except Exception:
+        Base.metadata.drop_all(bind=engine)
