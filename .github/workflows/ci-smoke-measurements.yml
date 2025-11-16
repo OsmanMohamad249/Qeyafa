@@ -24,8 +24,11 @@ jobs:
         env:
           SECRET_KEY: ${{ secrets.CI_SECRET_KEY }}
         run: |
-          export SECRET_KEY="$SECRET_KEY"
-          docker compose up --build -d
+          # Persist interpolation vars so later `docker compose down` can read them too
+          mkdir -p .ci
+          echo "SECRET_KEY=$SECRET_KEY" > .ci/.ci.env
+          # Bring up with the env-file to ensure consistent interpolation
+          docker compose --env-file .ci/.ci.env up --build -d
 
       - name: Wait for backend health
         run: |
@@ -135,4 +138,9 @@ jobs:
       - name: Tear down compose services
         if: always()
         run: |
-          docker compose down -v
+          # Use the same env-file used for `up` so compose interpolation won't fail
+          if [ -f .ci/.ci.env ]; then
+            docker compose --env-file .ci/.ci.env down -v
+          else
+            docker compose down -v
+          fi
