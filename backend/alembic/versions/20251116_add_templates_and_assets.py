@@ -1,6 +1,6 @@
 """add templates and assets tables
 
-Revision ID: 20251116_add_templates_and_assets
+Revision ID: 20251116_templates_assets
 Revises: f8c9d1e2a3b4
 Create Date: 2025-11-16 00:00:00.000000
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '20251116_add_templates_and_assets'
+revision = '20251116_templates_assets'
 down_revision = 'f8c9d1e2a3b4'
 branch_labels = None
 depends_on = None
