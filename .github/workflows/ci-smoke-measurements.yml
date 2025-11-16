@@ -166,7 +166,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Verifying measurement was persisted in DB (using backend container)"
-          docker compose exec -T backend bash -lc "export TEST_EMAIL='${TEST_EMAIL}'; python /workspaces/Qeyafa/backend/ci/check_db.py"
+          docker compose exec -T backend env TEST_EMAIL="${TEST_EMAIL}" python /workspaces/Qeyafa/backend/ci/check_db.py
 
       - name: Tear down compose services
         if: always()
