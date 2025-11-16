@@ -61,6 +61,9 @@ jobs:
           TEST_EMAIL="ci_smoke+${GITHUB_RUN_ID}@example.com"
           export TEST_EMAIL
           echo "Using TEST_EMAIL=$TEST_EMAIL"
+          # Persist TEST_EMAIL so later steps can read it (each step runs in a fresh shell)
+          mkdir -p .ci
+          echo "TEST_EMAIL=${TEST_EMAIL}" >> .ci/.ci.env
 
           # create tiny PNG (1x1 transparent) to POST
           IMG_B64='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII='
