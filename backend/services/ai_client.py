@@ -45,6 +45,7 @@ class AIClient:
         photo_right: UploadFile,
         height: float,
         weight: float,
+        force_error: str | None = None,
     ) -> Dict[str, Any]:
         """
         Send photos and measurements to AI service for processing.
@@ -101,8 +102,10 @@ class AIClient:
                     ),
                 ]
 
-                # Prepare form data
+                # Prepare form data, include optional debug trigger (force_error) if provided
                 data = {"height": height, "weight": weight}
+                if force_error is not None:
+                    data["force_error"] = force_error
 
                 # Make the request
                 response = await client.post(

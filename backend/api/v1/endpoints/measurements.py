@@ -231,6 +231,7 @@ async def process_measurements(
     photo_right: UploadFile = File(...),
     height: float = Form(..., gt=0),
     weight: float = Form(..., gt=0),
+    force_error: str | None = Form(None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -277,6 +278,7 @@ async def process_measurements(
                 photo_right=photo_right,
                 height=height,
                 weight=weight,
+                force_error=force_error,
             )
         except AIServiceError as e:
             raise HTTPException(
