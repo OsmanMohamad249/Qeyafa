@@ -169,6 +169,13 @@ jobs:
         run: |
           set -euo pipefail
           echo "Verifying measurement was persisted in DB (using backend container)"
+          # Load persisted env variables if present so TEST_EMAIL is available in this step
+          if [ -f .ci/.ci.env ]; then
+            set -o allexport
+            # shellcheck disable=SC1091
+            source .ci/.ci.env
+            set +o allexport
+          fi
           docker compose exec -T backend env TEST_EMAIL="${TEST_EMAIL}" python /workspaces/Qeyafa/backend/ci/check_db.py
 
       - name: Tear down compose services
