@@ -11,7 +11,7 @@ class Template(Base):
     name = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
     # JSONB payload storing template structure, placeholders, metadata
-    payload = Column(JSONB, nullable=False, default={})
+    payload = Column(JSONB, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 from sqlalchemy import Column, Integer, String, DateTime
