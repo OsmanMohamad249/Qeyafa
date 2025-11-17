@@ -87,9 +87,10 @@ jobs:
           COMPOSE_DOCKER_CLI_BUILD: 1
           DOCKER_BUILDKIT: 1
         run: |
-        # 1. Run services in detached mode first, waiting for health checks${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci.env -f docker-compose.ci.yml up --build -d --wait --timeout 120s
-        
-        # 2. Then run the tester service separately to execute tests${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci.env -f docker-compose.ci.yml run --rm tester
+          # 1. Run services in detached mode first, waiting for health checks
+          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci.env -f docker-compose.ci.yml up --build -d --wait --timeout 120s
+          # 2. Then run the tester service separately to execute tests
+          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci.env -f docker-compose.ci.yml run --rm tester
       - name: Tear down
         if: always()
         run: |
