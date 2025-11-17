@@ -36,6 +36,15 @@ jobs:
           : ${POSTGRES_PASSWORD:='qeyafa_password'}
           : ${POSTGRES_DB:='qeyafa_db'}
 
+          # If a CI env file exists, export its variables into the shell
+          if [ -f .ci/.ci.env ]; then
+            echo "Sourcing .ci/.ci.env into the shell (allexport)..."
+            set -o allexport
+            # shellcheck disable=SC1091
+            . .ci/.ci.env || true
+            set +o allexport
+          fi
+
           # Generate a CI-specific docker-compose file that mounts uploads to the runner
           cat > docker-compose.ci.yml <<'YAML'
           version: '3.8'
@@ -281,7 +290,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "Verifying measurement was persisted in DB (using backend container)"
-          docker compose exec -T backend bash -lc "export TEST_EMAIL='${TEST_EMAIL}'; python /workspaces/Qeyafa/backend/ci/check_db.py"
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc "export TEST_EMAIL='${TEST_EMAIL}'; python /workspaces/Qeyafa/backend/ci/check_db.py"
 
       - name: Tear down compose services
         if: always()
