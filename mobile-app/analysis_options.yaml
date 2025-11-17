@@ -34,6 +34,9 @@ linter:
     avoid_unnecessary_containers: true
     prefer_is_empty: true
     prefer_is_not_empty: true
+    
+    # Disable package imports requirement (75 files use relative imports)
+    always_use_package_imports: false
 
 analyzer:
   exclude:
