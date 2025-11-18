@@ -17,26 +17,13 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        'templates',
-        sa.Column('id', sa.Integer, primary_key=True),
-        sa.Column('name', sa.String(), nullable=False, unique=True),
-        sa.Column('description', sa.String(), nullable=True),
-        sa.Column('payload', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
-    )
-
-    op.create_table(
-        'assets',
-        sa.Column('id', sa.Integer, primary_key=True),
-        sa.Column('filename', sa.String(), nullable=False),
-        sa.Column('storage_path', sa.String(), nullable=False),
-        sa.Column('content_type', sa.String(), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    )
+    # This migration became a duplicate of 20251115_templates_assets
+    # Keep the revision in place but make it a no-op so Alembic does
+    # not attempt to create tables that already exist when both
+    # branches are merged/applied in CI.
+    return
 
 
 def downgrade() -> None:
-    op.drop_table('assets')
-    op.drop_table('templates')
+    # No-op downgrade for duplicate migration.
+    return
