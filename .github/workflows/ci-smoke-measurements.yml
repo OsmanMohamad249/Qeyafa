@@ -32,8 +32,15 @@ jobs:
           fi
           echo "ENV_VARS=$ENV_VARS" >> $GITHUB_OUTPUT
 
-      - name: Create docker-compose.ci.yml
-        run: |
+          # If a CI env file exists, export its variables into the shell
+          if [ -f .ci/.ci.env ]; then
+            echo "Sourcing .ci/.ci.env into the shell (allexport)..."
+            set -o allexport
+            # shellcheck disable=SC1091
+            . .ci/.ci.env || true
+            set +o allexport
+          fi
+
           # Generate a CI-specific docker-compose file that mounts uploads to the runner
           cat > docker-compose.ci.yml <<'YAML'
           version: '3.8'
@@ -98,7 +105,20 @@ jobs:
             postgres-data:
           YAML
 
-      - name: Build and Run Services
+          # Start services using the generated compose file
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml up --build -d
+
+          # Wait for backend health
+          echo "Waiting for backend /health..."
+          for i in {1..40}; do
+            if curl -sS http://localhost:8000/health | grep -q '"status":"ok"'; then
+              echo "backend healthy"; break
+            fi
+            sleep 3
+          done
+          curl -sS http://localhost:8000/health
+
+      - name: Wait for backend health
         run: |
            ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml up --build --wait --timeout 120s
 
@@ -115,28 +135,28 @@ jobs:
           ART_DIR=ci-artifacts
           mkdir -p "$ART_DIR"
           echo "Collecting docker-compose logs..."
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps > "$ART_DIR/compose.log" || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps backend > "$ART_DIR/backend.log" || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps ai-models > "$ART_DIR/ai-models.log" || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps postgres > "$ART_DIR/postgres.log" || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps > "$ART_DIR/compose.log" || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps backend > "$ART_DIR/backend.log" || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps ai-models > "$ART_DIR/ai-models.log" || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml logs --no-color --timestamps postgres > "$ART_DIR/postgres.log" || true
 
           echo "Attempting to copy alembic logs from backend container or filesystem..."
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'cp /app/alembic.log /tmp/alembic_from_container.log 2>/dev/null || true' || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'cp /workspaces/Qeyafa/backend/alembic.log /tmp/alembic_from_container_fs.log 2>/dev/null || true' || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp backend:/tmp/alembic_from_container.log "$ART_DIR/alembic.log" >/dev/null 2>&1 || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp backend:/tmp/alembic_from_container_fs.log "$ART_DIR/alembic_from_fs.log" >/dev/null 2>&1 || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'cp /app/alembic.log /tmp/alembic_from_container.log 2>/dev/null || true' || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'cp /workspaces/Qeyafa/backend/alembic.log /tmp/alembic_from_container_fs.log 2>/dev/null || true' || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp backend:/tmp/alembic_from_container.log "$ART_DIR/alembic.log" >/dev/null 2>&1 || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp backend:/tmp/alembic_from_container_fs.log "$ART_DIR/alembic_from_fs.log" >/dev/null 2>&1 || true
 
           echo "Running alembic inside backend container to capture migration logs (idempotent)"
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'python -m alembic upgrade head 2>&1 | tee /tmp/alembic_run.log || true' || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp backend:/tmp/alembic_run.log "$ART_DIR/alembic_run.log" >/dev/null 2>&1 || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'python -m alembic upgrade head 2>&1 | tee /tmp/alembic_run.log || true' || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp backend:/tmp/alembic_run.log "$ART_DIR/alembic_run.log" >/dev/null 2>&1 || true
 
             echo "Running Postgres version check into postgres_version.txt (via postgres container)..."
-            ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T postgres bash -lc "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -c \"SELECT version();\" > /tmp/postgres_version.txt 2>&1 || true" || true
-            ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp postgres:/tmp/postgres_version.txt "$ART_DIR/postgres_version.txt" >/dev/null 2>&1 || true
+            docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T postgres bash -lc "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c \"SELECT version();\" > /tmp/postgres_version.txt 2>&1 || true" || true
+            docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp postgres:/tmp/postgres_version.txt "$ART_DIR/postgres_version.txt" >/dev/null 2>&1 || true
 
             echo "Dumping users (first 200 rows) to users-after-migrations.csv via postgres container..."
-            ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T postgres bash -lc "psql -U \${POSTGRES_USER} -d \${POSTGRES_DB} -c \"COPY (SELECT id, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 200) TO STDOUT WITH CSV HEADER\" > /tmp/users-after-migrations.csv 2>&1 || true" || true
-            ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp postgres:/tmp/users-after-migrations.csv "$ART_DIR/users-after-migrations.csv" >/dev/null 2>&1 || true
+            docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T postgres bash -lc "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c \"COPY (SELECT id, email, role, created_at FROM users ORDER BY created_at DESC LIMIT 200) TO STDOUT WITH CSV HEADER\" > /tmp/users-after-migrations.csv 2>&1 || true" || true
+            docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp postgres:/tmp/users-after-migrations.csv "$ART_DIR/users-after-migrations.csv" >/dev/null 2>&1 || true
 
           echo "Ensuring tester.log exists (best-effort)..."
           if [ -f tester.log ]; then
@@ -156,9 +176,9 @@ jobs:
             fi
           fi
 
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'ls -la /tmp || true' > "$ART_DIR/backend_tmp_listing.log" || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T ai-models bash -lc 'ps aux || true' > "$ART_DIR/ai-models-process-listing.log" || true
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp ai-models:/tmp/ai-models.log "$ART_DIR/ai-models.tmp.log" >/dev/null 2>&1 || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc 'ls -la /tmp || true' > "$ART_DIR/backend_tmp_listing.log" || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T ai-models bash -lc 'ps aux || true' > "$ART_DIR/ai-models-process-listing.log" || true
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml cp ai-models:/tmp/ai-models.log "$ART_DIR/ai-models.tmp.log" >/dev/null 2>&1 || true
 
           tar -czf ci-logs.tar.gz -C "$ART_DIR" . || true
         shell: bash
@@ -173,9 +193,9 @@ jobs:
         run: |
           set -euo pipefail
           echo "Verifying measurement was persisted in DB (using backend container)"
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc "export TEST_EMAIL='${TEST_EMAIL}'; python /workspaces/Qeyafa/backend/ci/check_db.py"
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml exec -T backend bash -lc "export TEST_EMAIL='${TEST_EMAIL}'; python /workspaces/Qeyafa/backend/ci/check_db.py"
 
       - name: Tear down compose services
         if: always()
         run: |
-          ${{ steps.load_env.outputs.ENV_VARS }} docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml down -v
+          docker compose --env-file .ci/.ci.env -f docker-compose.ci.yml down -v
