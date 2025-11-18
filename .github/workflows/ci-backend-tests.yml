@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Docker Compose file for CI
-                  run: |
+        run: |
             # Generate a cryptographically strong SECRET_KEY for the tester container
             SECRET_KEY=$(openssl rand -hex 32)
             echo "Using generated SECRET_KEY for CI"
