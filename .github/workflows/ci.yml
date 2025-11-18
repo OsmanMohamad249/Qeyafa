@@ -75,6 +75,7 @@ jobs:
           mkdir -p "$UPLOAD_DIR"
           chmod -R a+rwx "$UPLOAD_DIR" || true
           pytest -q backend/tests
+
 name: CI
 
 on:
