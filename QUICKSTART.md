@@ -20,7 +20,7 @@ If missing:
 
 ```bash
 # From project root
-docker-compose up --build
+docker compose up --build
 ```
 
 Wait for: `Application startup complete`
@@ -29,7 +29,7 @@ In a **new terminal**:
 
 ```bash
 # Run database migrations
-docker-compose exec backend bash
+docker compose exec backend bash
 cd /app && alembic upgrade head && exit
 ```
 
@@ -90,8 +90,8 @@ curl -X POST http://localhost:8000/api/v1/auth/login \
 ## Troubleshooting
 
 ### Backend issues?
-- Check: `docker-compose ps` (both services should be "Up")
-- Logs: `docker-compose logs backend`
+- Check: `docker compose ps` (both services should be "Up")
+- Logs: `docker compose logs backend`
 
 ### Mobile app connection error?
 - Android Emulator: URL should be `http://10.0.2.2:8000`
@@ -114,20 +114,20 @@ docker-compose up --build
 
 ```bash
 # Stop services
-docker-compose down
+docker compose down -v
 
 # View database
-docker-compose exec postgres psql -U qeyafa -d qeyafa_db
+docker compose exec postgres psql -U qeyafa -d qeyafa_db
 \dt
 SELECT * FROM users;
 \q
 
 # Backend logs
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Reset database
-docker-compose down -v
-docker-compose up
+docker compose down -v
+docker compose up
 ```
 
 🎉 **You're all set!** The authentication system is fully functional.

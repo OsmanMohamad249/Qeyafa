@@ -48,7 +48,7 @@ This folder contains the FastAPI backend application for Qeyafa with secure conf
 Using Docker Compose (recommended):
 ```bash
 # From project root
-docker-compose up backend
+docker compose up backend
 ```
 
 Building manually:
@@ -133,7 +133,7 @@ docker run -d --name qeyafa-test-db \
   postgres:15
 
 # Or use docker-compose
-docker-compose up -d postgres
+docker compose up -d postgres
 
 ### Developer helper: run tests with ephemeral Postgres
 

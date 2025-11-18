@@ -11,7 +11,7 @@
 
 ### Local Testing
 1. Clone the repository
-2. Run `docker-compose up --build`
+2. Run `docker compose up --build`
 3. Visit http://localhost:5000/health to verify backend is running
 4. Test API endpoints using curl or Postman
 

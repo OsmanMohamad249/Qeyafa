@@ -240,13 +240,13 @@ Enhanced testing infrastructure and Docker Compose configuration for more reliab
 **Usage:**
 ```bash
 # Start test environment
-docker-compose -f docker-compose.test.yml up -d
+docker compose -f docker-compose.test.yml up -d
 
 # Run tests
-docker-compose -f docker-compose.test.yml exec backend pytest
+docker compose -f docker-compose.test.yml exec backend pytest
 
 # Stop and clean up
-docker-compose -f docker-compose.test.yml down -v
+docker compose -f docker-compose.test.yml down -v
 ```
 
 #### 3. Improved Smoke Test Script
@@ -288,7 +288,7 @@ MAX_RETRIES=60 RETRY_DELAY=1 ./scripts/smoke_test.sh
 
 2. **Use Docker Compose for integration testing:**
    ```bash
-   docker-compose -f docker-compose.test.yml up --abort-on-container-exit
+   docker compose -f docker-compose.test.yml up --abort-on-container-exit
    ```
 
 3. **Check CI logs when tests fail:**

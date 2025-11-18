@@ -15,7 +15,7 @@ Mobile App: Flutter (Dart)
 
 Database: PostgreSQL
 
-Infrastructure: Docker (via docker-compose)
+Infrastructure: Docker (via Docker Compose / `docker compose`)
 
 CI/Quality: GitHub Actions (using ruff & black)
 
@@ -39,10 +39,10 @@ git pull origin main
 
 # 2. Build and run all services (backend + database)
 # This will also build the Flutter app container if defined
-docker-compose up --build -d
+docker compose up --build -d
 
 # 3. (Optional) Check that services are running
-docker-compose ps
+docker compose ps
 
 
 
@@ -57,7 +57,7 @@ Database (PostgreSQL): Accessible on port 5432 (for tools like DBeaver)
 Stopping Services
 
 # Stop all services
-docker-compose down
+docker compose down
 
 
 

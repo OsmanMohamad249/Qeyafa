@@ -14,9 +14,9 @@ This guide will help you set up the Qeyafa MVP application for local development
    - Download from https://python.org/
    - Verify installation: `python --version`
 
-3. **Docker & Docker Compose**
+3. **Docker & Docker Compose (Docker Compose v2 plugin preferred)**
    - Download from https://docker.com/
-   - Verify installation: `docker --version` and `docker-compose --version`
+   - Verify installation: `docker --version` and `docker compose version`
 
 4. **MongoDB** (if not using Docker)
    - Download from https://mongodb.com/
@@ -39,10 +39,10 @@ git clone https://github.com/OsmanMohamad249/Qeyafa.git
 cd Qeyafa
 
 # 2. Start all services
-docker-compose up -d
+docker compose up -d
 
 # 3. Verify services are running
-docker-compose ps
+docker compose ps
 
 # You should see:
 # - qeyafa-backend (port 5000)
@@ -51,8 +51,8 @@ docker-compose ps
 # - qeyafa-mongo-express (port 8081)
 
 # 4. Check logs if needed
-docker-compose logs -f backend
-docker-compose logs -f ai-service
+docker compose logs -f backend
+docker compose logs -f ai-service
 ```
 
 **Service URLs:**
