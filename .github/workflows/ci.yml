@@ -34,6 +34,29 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Ensure SECRET_KEY
+        run: |
+          is_weak=0
+          if [ -z "${SECRET_KEY:-}" ]; then
+            is_weak=1
+          elif [ ${#SECRET_KEY} -lt 32 ]; then
+            is_weak=1
+          else
+            lower="${SECRET_KEY,,}"
+            case "$lower" in
+              *secret*|*change*|*password*) is_weak=1 ;;
+            esac
+          fi
+
+          if [ "$is_weak" -eq 1 ]; then
+            SECRET_KEY="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+            echo "Generated strong SECRET_KEY for CI"
+          else
+            echo "Using SECRET_KEY provided via secrets."
+          fi
+
+          echo "SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
