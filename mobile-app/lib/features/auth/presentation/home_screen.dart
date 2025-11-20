@@ -5,7 +5,6 @@ import 'auth_provider.dart';
 import 'login_screen.dart';
 import '../../../screens/designs/designs_list_screen.dart';
 import '../../../screens/measurements/measurements_list_screen.dart';
-import '../../../screens/smart_camera_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -115,20 +114,6 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                     ElevatedButton.icon(
-                      icon: Icon(Icons.camera_alt),
-                      label: Text('Smart Camera (AI)'),
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const SmartCameraScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        backgroundColor: Colors.purple,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    ElevatedButton.icon(
                       icon: Icon(Icons.logout),
                       label: Text('Logout'),
                       onPressed: () async {
@@ -194,21 +179,6 @@ class HomeScreen extends ConsumerWidget {
                   },
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  ),
-                ),
-                SizedBox(height: 16),
-                ElevatedButton.icon(
-                  icon: Icon(Icons.camera_alt),
-                  label: Text('Try Smart Camera'),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SmartCameraScreen()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
                   ),
                 ),
               ],

@@ -7,7 +7,8 @@ This repository has been transformed from a simple Flask demo application to the
 ## What Changed
 
 ### Old Structure (Flask Demo)
-```
+
+```text
 Qeyafa/
 ├── app/              # Flask application
 ├── config/           # Flask config
@@ -17,7 +18,8 @@ Qeyafa/
 ```
 
 ### New Structure (MVP)
-```
+
+```text
 Qeyafa/
 ├── mobile-app/          # React Native mobile application
 ├── backend/             # Node.js/Express API server
@@ -37,7 +39,6 @@ The following files from the original Flask demo are preserved for reference:
 - `tests/` - Original Flask tests
 - `run.py` - Original Flask entry point
 - `requirements.txt` - Original Flask requirements
-- `README-OLD.md` - Original README
 
 **Note**: These files are not part of the MVP and should not be modified or used. They are kept for historical reference only.
 
