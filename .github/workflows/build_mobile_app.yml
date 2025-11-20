@@ -35,6 +35,14 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
+    - name: Create local.properties
+      run: |
+        if [ -z "$FLUTTER_ROOT" ]; then
+          echo "FLUTTER_ROOT not set, trying to find it..."
+          FLUTTER_ROOT=$(dirname $(dirname $(which flutter)))
+        fi
+        echo "flutter.sdk=$FLUTTER_ROOT" > mobile-app/android/local.properties
+
     - name: Clean build cache
       run: flutter clean
 
