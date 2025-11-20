@@ -5,7 +5,10 @@ Run with: pytest backend/tests/test_templates.py
 """
 
 from fastapi.testclient import TestClient
-from main import app
+try:
+    from main import app
+except ImportError:
+    from backend.main import app
 import time
 
 
