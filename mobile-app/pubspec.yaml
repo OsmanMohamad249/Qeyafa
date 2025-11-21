@@ -20,6 +20,22 @@ dependencies:
   intl: ^0.18.1                    # Internationalization
   freezed_annotation: ^3.1.0       # Freezed annotations for code generation (bumped for regen)
   file_picker: ^6.2.1             # Pick images/files for upload
+  
+  # MediaPipe & AI Model dependencies
+  mediapipe_task_vision: ^0.1.0    # Pose detection using MediaPipe
+  mediapipe_core: ^0.1.0           # MediaPipe core library
+  
+  # Camera & Sensors
+  camera: ^0.11.0                  # Camera control with manual focus/exposure
+  sensors_plus: ^6.0.1             # Gyroscope/accelerometer for tilt detection
+  
+  # Audio & Permissions
+  flutter_tts: ^4.2.0              # Voice guidance
+  permission_handler: ^11.3.1      # Permission management
+  
+  # Image & File handling
+  image: ^4.3.0                    # Image manipulation and resizing
+  path_provider: ^2.1.4            # Filesystem access
 
 
 dev_dependencies:
@@ -31,3 +47,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/models/

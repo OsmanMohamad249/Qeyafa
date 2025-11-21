@@ -47,5 +47,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Qeyafa needs camera access to measure your body dimensions accurately.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Qeyafa needs microphone access for voice commands.</string>
 </dict>
 </plist>
