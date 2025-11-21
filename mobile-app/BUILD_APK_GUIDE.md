@@ -4,13 +4,31 @@
 
 ### المتطلبات:
 - ✅ Android Studio مثبت
-- ✅ Android SDK (API 24+)
+- ✅ Android SDK (API 24+ للحد الأدنى، API 34 موصى به)
+- ✅ Android Build Tools 28.0.3+ و 34.0.0
+- ✅ NDK 28.2.13676358 (يتم تحميله تلقائيًا)
 - ✅ Flutter SDK (3.38.3+)
-- ✅ Java JDK 17
+- ✅ Java JDK 17+
+- ⚠️ الذاكرة: يحتاج Gradle 3GB+ RAM للبناء بنجاح
 
 ---
 
-## 🚀 خطوات البناء
+## 🛠️ ملاحظات هامة
+
+### مشاكل معروفة في Codespaces/CI:
+- ❌ **الذاكرة المحدودة**: Gradle Daemon قد يتوقف في بيئات أقل من 4GB RAM
+- ⚠️ **الحل**: استخدم جهاز محلي أو GitHub Actions runner مع `runs-on: ubuntu-latest`
+
+### ✅ تم الإصلاح:
+- ✅ تحديث Android Gradle Plugin من 8.1.0 إلى 8.1.1
+- ✅ إزالة `kotlin_version` variable وتثبيت Kotlin 1.9.0
+- ✅ إصلاح package name في debug AndroidManifest.xml
+- ✅ زيادة heap size إلى 3072M في gradle.properties
+- ✅ حذف MediaPipePlugin.kt غير المستخدم
+
+---
+
+## 🚀 خطوات البناء (جهاز محلي موصى به)
 
 ### 1️⃣ تحضير البيئة
 
@@ -19,9 +37,9 @@
 flutter doctor -v
 
 # يجب أن ترى:
-# ✓ Flutter
-# ✓ Android toolchain
-# ✓ Android Studio
+# ✓ Flutter (Channel stable, 3.38.3+)
+# ✓ Android toolchain - develop for Android devices
+# ✓ Android Studio (version 2023.1+)
 ```
 
 ### 2️⃣ استنساخ المشروع
@@ -41,7 +59,7 @@ flutter pub get
 ### 4️⃣ بناء APK للتجربة (Debug)
 
 ```bash
-# بناء APK تجريبي (أسرع، حجم أكبر)
+# بناء APK تجريبي (أسرع، حجم أكبر، ~100-150MB)
 flutter build apk --debug
 
 # الملف سيكون في:
