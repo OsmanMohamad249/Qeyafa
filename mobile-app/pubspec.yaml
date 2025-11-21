@@ -1,5 +1,5 @@
 name: qeyafa
-description: High precision AI measurement app with MediaPipe 3D pose detection.
+description: High precision AI measurement app.
 version: 1.0.0+1
 publish_to: 'none'
 
@@ -10,51 +10,28 @@ dependencies:
   flutter:
     sdk: flutter
   
-  # Core Logic
+  # --- Core Utilities ---
   cupertino_icons: ^1.0.2
-  permission_handler: ^11.3.0
   path_provider: ^2.1.2
+  permission_handler: ^11.3.0
   
-  # Camera & Image Processing
+  # --- Hardware Access ---
   camera: ^0.11.0
+  sensors_plus: ^5.0.1
+  
+  # --- UI & Image ---
   image: ^4.1.7
   
-  # Sensors & UI
-  sensors_plus: ^5.0.1
+  # --- Audio ---
   flutter_tts: ^3.8.5
-  
-  # State Management
-  flutter_riverpod: ^2.4.9
-  
-  # HTTP & Storage
-  http: ^1.1.0
-  flutter_secure_storage: ^9.0.0
-  
-  # UI Utilities
-  cached_network_image: ^3.3.0
-  file_picker: ^6.1.1
-  intl: ^0.19.0
-  
-  # Annotations
-  freezed_annotation: ^2.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  build_runner: ^2.4.6
-  freezed: ^2.4.5
 
 flutter:
   uses-material-design: true
+  # We keep the assets folder ready for the model
   assets:
     - assets/models/
-  
-  # Platform Channels for native MediaPipe integration
-  plugin:
-    platforms:
-      android:
-        package: com.qeyafa.mobile
-        pluginClass: MediaPipePlugin
-      ios:
-        pluginClass: MediaPipePlugin

@@ -1,188 +1,95 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import '../models/pose_landmark.dart';
 
-/// MediaPipe Pose Landmark (33 points with 3D coordinates)
-class PoseLandmark {
-  final double x;
-  final double y;
-  final double z; // 3D depth coordinate
-  final double visibility;
-
-  PoseLandmark({
-    required this.x,
-    required this.y,
-    required this.z,
-    required this.visibility,
-  });
-
-  factory PoseLandmark.fromMap(Map<String, dynamic> map) {
-    return PoseLandmark(
-      x: (map['x'] as num).toDouble(),
-      y: (map['y'] as num).toDouble(),
-      z: (map['z'] as num).toDouble(),
-      visibility: (map['visibility'] as num).toDouble(),
-    );
-  }
-}
-
-/// Pose Detection Result
-class PoseResult {
-  final List<PoseLandmark> landmarks; // 33 landmarks
-  final double timestamp;
-
-  PoseResult({
-    required this.landmarks,
-    required this.timestamp,
-  });
-
-  factory PoseResult.fromMap(Map<String, dynamic> map) {
-    final landmarksData = (map['landmarks'] as List);
-    final landmarks = landmarksData
-        .map((lm) => PoseLandmark.fromMap(Map<String, dynamic>.from(lm as Map)))
-        .toList();
-
-    return PoseResult(
-      landmarks: landmarks,
-      timestamp: (map['timestamp'] as num).toDouble(),
-    );
-  }
-}
-
-/// VisionService - Native MediaPipe Integration via Platform Channels
+/// Singleton service that bridges Flutter to Native MediaPipe implementation.
+///
+/// This service communicates with Android (Kotlin) and iOS (Swift) native code
+/// through Platform Channels to perform real-time pose detection using MediaPipe.
 class VisionService {
-  static final VisionService _instance = VisionService._internal();
-  static VisionService get instance => _instance;
-  VisionService._internal();
+  VisionService._();
+  static final VisionService instance = VisionService._();
 
-  static const MethodChannel _channel = MethodChannel('com.qeyafa/mediapipe');
-  static const EventChannel _eventChannel = EventChannel('com.qeyafa/mediapipe_stream');
+  // Platform Channels
+  static const MethodChannel _methodChannel = MethodChannel('com.qeyafa.app/vision');
+  static const EventChannel _eventChannel = EventChannel('com.qeyafa.app/vision_stream');
 
+  Stream<List<PoseLandmark>>? _poseStream;
   bool _isInitialized = false;
-  StreamSubscription? _poseStreamSubscription;
-  final _poseStreamController = StreamController<PoseResult>.broadcast();
 
-  /// Check if MediaPipe is initialized
-  bool get isInitialized => _isInitialized;
-
-  /// Stream of pose detection results
-  Stream<PoseResult> get poseStream => _poseStreamController.stream;
-
-  /// Initialize MediaPipe with Heavy Model
+  /// Initializes the native MediaPipe Pose Landmarker.
+  ///
+  /// Must be called before using [poseStream].
+  /// Throws [PlatformException] if initialization fails.
   Future<void> initialize() async {
     if (_isInitialized) {
-      print('✅ VisionService: Already initialized');
+      print('⚠️ VisionService already initialized');
       return;
     }
 
     try {
-      print('🔄 VisionService: Initializing native MediaPipe...');
-      
-      final result = await _channel.invokeMethod('initialize', {
-        'modelPath': 'pose_landmarker_heavy.task',
-        'delegate': 'CPU', // or 'GPU'
-        'numPoses': 1,
-        'minDetectionConfidence': 0.75,
-        'minPresenceConfidence': 0.75,
-        'minTrackingConfidence': 0.7,
-        'outputSegmentationMasks': false,
-      });
-
-      if (result == true) {
-        _isInitialized = true;
-        _setupPoseStream();
-        print('✅ VisionService: MediaPipe initialized successfully');
-      } else {
-        throw Exception('Failed to initialize MediaPipe');
-      }
-    } catch (e, stackTrace) {
-      print('❌ VisionService Error: $e');
-      print('StackTrace: $stackTrace');
-      _isInitialized = false;
+      print('🚀 Initializing native MediaPipe...');
+      await _methodChannel.invokeMethod('init');
+      _isInitialized = true;
+      print('✅ MediaPipe initialized successfully');
+    } on PlatformException catch (e) {
+      print('❌ Failed to initialize MediaPipe: ${e.message}');
+      print('   Code: ${e.code}, Details: ${e.details}');
+      rethrow;
+    } catch (e) {
+      print('❌ Unexpected error during initialization: $e');
       rethrow;
     }
   }
 
-  /// Setup pose detection stream
-  void _setupPoseStream() {
-    _poseStreamSubscription = _eventChannel.receiveBroadcastStream().listen(
-      (data) {
-        try {
-          final resultMap = Map<String, dynamic>.from(data as Map);
-          final poseResult = PoseResult.fromMap(resultMap);
-          _poseStreamController.add(poseResult);
-        } catch (e) {
-          print('❌ Error parsing pose data: $e');
+  /// Stream of pose detection results.
+  ///
+  /// Each emission contains a list of 33 [PoseLandmark] objects representing
+  /// the full body pose in 3D space.
+  ///
+  /// Call [initialize] before accessing this stream.
+  Stream<List<PoseLandmark>> get poseStream {
+    if (!_isInitialized) {
+      throw StateError('VisionService must be initialized before accessing poseStream');
+    }
+
+    _poseStream ??= _eventChannel.receiveBroadcastStream().map((event) {
+      try {
+        if (event == null) {
+          print('⚠️ Received null event from native');
+          return <PoseLandmark>[];
         }
-      },
-      onError: (error) {
-        print('❌ Pose stream error: $error');
-      },
-    );
-  }
 
-  /// Process a single frame (for image mode)
-  Future<PoseResult?> processFrame(Uint8List imageData, int width, int height) async {
-    if (!_isInitialized) {
-      throw Exception('VisionService not initialized');
-    }
+        // Event should be a List of Maps
+        final List<dynamic> landmarkMaps = event as List<dynamic>;
+        
+        final landmarks = landmarkMaps
+            .map((map) => PoseLandmark.fromMap(map as Map<dynamic, dynamic>))
+            .toList();
 
-    try {
-      final result = await _channel.invokeMethod('processFrame', {
-        'imageData': imageData,
-        'width': width,
-        'height': height,
-      });
-
-      if (result != null) {
-        final resultMap = Map<String, dynamic>.from(result as Map);
-        return PoseResult.fromMap(resultMap);
+        print('📍 Received ${landmarks.length} landmarks');
+        return landmarks;
+      } catch (e) {
+        print('❌ Error parsing pose data: $e');
+        return <PoseLandmark>[];
       }
-      return null;
-    } catch (e) {
-      print('❌ Error processing frame: $e');
-      return null;
-    }
+    });
+
+    return _poseStream!;
   }
 
-  /// Start live stream processing
-  Future<void> startLiveStream() async {
-    if (!_isInitialized) {
-      throw Exception('VisionService not initialized');
-    }
-
-    try {
-      await _channel.invokeMethod('startLiveStream');
-      print('✅ Live stream started');
-    } catch (e) {
-      print('❌ Error starting live stream: $e');
-      rethrow;
-    }
-  }
-
-  /// Stop live stream processing
-  Future<void> stopLiveStream() async {
-    try {
-      await _channel.invokeMethod('stopLiveStream');
-      print('✅ Live stream stopped');
-    } catch (e) {
-      print('❌ Error stopping live stream: $e');
-    }
-  }
-
-  /// Dispose resources
+  /// Stops the pose detection stream and releases native resources.
   Future<void> dispose() async {
-    print('🔄 VisionService: Disposing resources...');
-    
-    await stopLiveStream();
-    await _poseStreamSubscription?.cancel();
-    await _poseStreamController.close();
-
     try {
-      await _channel.invokeMethod('dispose');
+      await _methodChannel.invokeMethod('dispose');
       _isInitialized = false;
-      print('✅ VisionService: Disposed successfully');
-    } catch (e) {
-      print('❌ Error disposing VisionService: $e');
+      _poseStream = null;
+      print('🛑 VisionService disposed');
+    } on PlatformException catch (e) {
+      print('⚠️ Error disposing VisionService: ${e.message}');
     }
   }
+
+  /// Checks if the service is initialized.
+  bool get isInitialized => _isInitialized;
 }

@@ -1,22 +1,13 @@
 // mobile-app/lib/main.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'features/auth/presentation/splash_screen.dart';
+import 'features/measurement/screens/smart_camera_screen.dart';
 
 void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
-    
-    // Initialize secure storage options for web if needed
-    // Note: flutter_secure_storage usually handles this, but explicit options can help
-    // const FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
 
-    runApp(
-      ProviderScope(
-        child: QeyafaApp(),
-      ),
-    );
+    runApp(const QeyafaApp());
   }, (error, stack) {
     print('Caught Dart Error: $error');
     print(stack);
@@ -29,12 +20,12 @@ class QeyafaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Qeyafa',
+      title: 'Qeyafa - AI Measurement',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const SplashScreen(),
+      home: const SmartCameraScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
