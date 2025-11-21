@@ -1,51 +1,60 @@
 name: qeyafa
-description: Qeyafa mobile app (Flutter) - boilerplate
-publish_to: "none"
-version: 0.1.0
+description: High precision AI measurement app with MediaPipe 3D pose detection.
+version: 1.0.0+1
+publish_to: 'none'
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Core Logic
   cupertino_icons: ^1.0.2
-  http: ^1.2.2                    # API calls (compatible with Flutter 2.19)
-  provider: ^6.0.5                 # State management (alternative to Riverpod)
-  flutter_riverpod: ^2.3.6        # State management (Riverpod, compatible with 2.19)
-  shared_preferences: ^2.1.1       # Local storage (compatible with 2.19)
-  cached_network_image: ^3.4.1     # Image caching (compatible with 2.19)
-  flutter_secure_storage: ^8.0.0   # Secure token storage (compatible with 2.19)
-  dartz: ^0.10.1                   # Functional programming
-  intl: ^0.18.1                    # Internationalization
-  freezed_annotation: ^3.1.0       # Freezed annotations for code generation (bumped for regen)
-  file_picker: ^6.2.1             # Pick images/files for upload
+  permission_handler: ^11.3.0
+  path_provider: ^2.1.2
   
-  # MediaPipe & AI Model dependencies
-  mediapipe_task_vision: ^0.1.0    # Pose detection using MediaPipe
-  mediapipe_core: ^0.1.0           # MediaPipe core library
+  # Camera & Image Processing
+  camera: ^0.11.0
+  image: ^4.1.7
   
-  # Camera & Sensors
-  camera: ^0.11.0                  # Camera control with manual focus/exposure
-  sensors_plus: ^6.0.1             # Gyroscope/accelerometer for tilt detection
+  # Sensors & UI
+  sensors_plus: ^5.0.1
+  flutter_tts: ^3.8.5
   
-  # Audio & Permissions
-  flutter_tts: ^4.2.0              # Voice guidance
-  permission_handler: ^11.3.1      # Permission management
+  # State Management
+  flutter_riverpod: ^2.4.9
   
-  # Image & File handling
-  image: ^4.3.0                    # Image manipulation and resizing
-  path_provider: ^2.1.4            # Filesystem access
-
+  # HTTP & Storage
+  http: ^1.1.0
+  flutter_secure_storage: ^9.0.0
+  
+  # UI Utilities
+  cached_network_image: ^3.3.0
+  file_picker: ^6.1.1
+  intl: ^0.19.0
+  
+  # Annotations
+  freezed_annotation: ^2.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
-  build_runner: ^2.4.0             # Code generation tool
-  freezed: ^3.2.3                  # Code generator for unions/pattern-matching (bumped)
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.6
+  freezed: ^2.4.5
 
 flutter:
   uses-material-design: true
   assets:
     - assets/models/
+  
+  # Platform Channels for native MediaPipe integration
+  plugin:
+    platforms:
+      android:
+        package: com.qeyafa.mobile
+        pluginClass: MediaPipePlugin
+      ios:
+        pluginClass: MediaPipePlugin

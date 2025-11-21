@@ -7,7 +7,7 @@ import '../utils/helpers.dart';
 class DesignCard extends StatelessWidget {
   final Design design;
   
-  const DesignCard({Key? key, required this.design}) : super(key: key);
+  const DesignCard({super.key, required this.design});
   
   @override
   Widget build(BuildContext context) {

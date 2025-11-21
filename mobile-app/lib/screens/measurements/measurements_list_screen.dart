@@ -5,7 +5,7 @@ import 'upload_image_screen.dart';
 import 'process_measurements_screen.dart';
 
 class MeasurementsListScreen extends StatefulWidget {
-  const MeasurementsListScreen({Key? key}) : super(key: key);
+  const MeasurementsListScreen({super.key});
 
   @override
   _MeasurementsListScreenState createState() => _MeasurementsListScreenState();

@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../services/measurement_service.dart';
 
 class UploadImageScreen extends StatefulWidget {
-  const UploadImageScreen({Key? key}) : super(key: key);
+  const UploadImageScreen({super.key});
 
   @override
   _UploadImageScreenState createState() => _UploadImageScreenState();

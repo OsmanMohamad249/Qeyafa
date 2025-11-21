@@ -6,7 +6,7 @@ import '../utils/helpers.dart';
 class DesignListItem extends StatelessWidget {
   final Design design;
   
-  const DesignListItem({Key? key, required this.design}) : super(key: key);
+  const DesignListItem({super.key, required this.design});
   
   @override
   Widget build(BuildContext context) {

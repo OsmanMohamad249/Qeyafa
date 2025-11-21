@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../services/measurement_service.dart';
 
 class ProcessMeasurementsScreen extends StatefulWidget {
-  const ProcessMeasurementsScreen({Key? key}) : super(key: key);
+  const ProcessMeasurementsScreen({super.key});
 
   @override
   _ProcessMeasurementsScreenState createState() => _ProcessMeasurementsScreenState();

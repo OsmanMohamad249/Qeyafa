@@ -24,7 +24,7 @@ void main() async {
 }
 
 class QeyafaApp extends StatelessWidget {
-  const QeyafaApp({Key? key}) : super(key: key);
+  const QeyafaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
