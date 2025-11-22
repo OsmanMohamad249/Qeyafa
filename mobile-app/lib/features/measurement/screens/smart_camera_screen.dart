@@ -32,7 +32,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
   
   // Multi-pose flow controller
   MeasurementFlowController? _flowController;
-  bool _useMultiPoseMode = false; // Toggle between single and multi-pose
+  bool _useMultiPoseMode = true; // Toggle between single and multi-pose (default: multi)
   
   // Auto-capture system
   int _matchedFramesCount = 0;
@@ -41,7 +41,7 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
   int _countdownSeconds = 0;
   Timer? _countdownTimer;
   
-  // Stability counter for auto-capture
+  // Stability counter for multi-pose auto-capture
   int _stabilityCounter = 0;
   final int _requiredStableFrames = 45; // 3 seconds at 15 FPS
   
@@ -54,9 +54,19 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeFlowController();
     _initializeCamera();
     _initializeVisionService();
     _startOrientationDetection();
+  }
+
+  /// Initialize Multi-Pose Flow Controller
+  void _initializeFlowController() {
+    if (_useMultiPoseMode) {
+      _flowController = MeasurementFlowController(isArabic: _isArabic);
+      final userHeight = double.tryParse(_heightController.text);
+      _flowController!.startSession(userHeightCm: userHeight);
+    }
   }
 
   /// Initialize camera with high resolution
@@ -108,8 +118,12 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
               _currentLandmarks = landmarks;
             });
             
-            // Check for auto-capture
-            _checkForAutoCapture(landmarks);
+            // Multi-pose or single mode auto-capture
+            if (_useMultiPoseMode) {
+              _checkForMultiPoseCapture(landmarks);
+            } else {
+              _checkForAutoCapture(landmarks);
+            }
           }
         },
         onError: (error) {
@@ -188,6 +202,85 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
       // Reset if pose doesn't match
       _matchedFramesCount = 0;
       _cancelCountdown();
+    }
+  }
+
+  /// Check for multi-pose session auto-capture with stability counter
+  void _checkForMultiPoseCapture(List<PoseLandmark> landmarks) {
+    if (_flowController == null || _flowController!.isSessionComplete) return;
+    
+    // Check if pose is good quality (using BodyCalculator quality check)
+    final poseMatches = BodyCalculator.isGoodQuality(landmarks) && _isPhoneVertical;
+    
+    if (poseMatches) {
+      _stabilityCounter++;
+      
+      // Auto-capture after 3 seconds of stability
+      if (_stabilityCounter >= _requiredStableFrames) {
+        _captureCurrentStep(landmarks);
+      }
+    } else {
+      // Reset stability counter if pose breaks
+      _stabilityCounter = 0;
+    }
+  }
+
+  /// Capture current step in multi-pose session
+  Future<void> _captureCurrentStep(List<PoseLandmark> landmarks) async {
+    _stabilityCounter = 0; // Reset for next step
+    
+    setState(() {
+      _isProcessing = true;
+    });
+
+    final success = await _flowController!.captureStep(landmarks);
+    
+    if (success && mounted) {
+      // Check if session is complete
+      if (_flowController!.isSessionComplete) {
+        await _finishMultiPoseSession();
+      } else {
+        // Continue to next step
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    } else {
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  /// Finish multi-pose session and navigate to results
+  Future<void> _finishMultiPoseSession() async {
+    final result = await _flowController!.calculateFinalMeasurements();
+    
+    if (result != null && mounted) {
+      await _flowController!.stopVoice();
+      
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => MeasurementResultScreen(result: result),
+        ),
+      );
+      
+      // Reset for new session
+      setState(() {
+        _isProcessing = false;
+        _flowController = null;
+      });
+      
+      // Reinitialize for next use
+      _initializeFlowController();
+    } else {
+      _showErrorSnackbar(_isArabic 
+        ? '❌ فشل حساب القياسات النهائية' 
+        : '❌ Failed to calculate final measurements');
+      
+      setState(() {
+        _isProcessing = false;
+      });
     }
   }
   
@@ -365,14 +458,18 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
           // Background: Camera Preview
           _buildCameraPreview(),
           
-          // Middle: AR Silhouette Guide Overlay
+          // Middle: AR Silhouette Guide Overlay (with current step)
           _buildAROverlay(),
+          
+          // Multi-pose progress indicator
+          if (_useMultiPoseMode && _flowController != null)
+            _buildMultiPoseProgress(),
           
           // Countdown overlay (when auto-capture is imminent)
           if (_countdownSeconds > 0) _buildCountdownOverlay(),
           
           // Capture progress indicator
-          if (_captureInProgress) _buildCaptureProgressOverlay(),
+          if (_captureInProgress || _isProcessing) _buildCaptureProgressOverlay(),
           
           // Foreground: Debug Info & Status
           _buildDebugInfo(),
@@ -398,6 +495,100 @@ class _SmartCameraScreenState extends State<SmartCameraScreen> {
       painter: SilhouettePainter(
         isPhoneVertical: _isPhoneVertical,
         landmarks: _currentLandmarks,
+        currentStep: _useMultiPoseMode && _flowController != null 
+          ? _flowController!.currentStep 
+          : null,
+      ),
+    );
+  }
+
+  /// Multi-pose session progress indicator
+  Widget _buildMultiPoseProgress() {
+    final controller = _flowController!;
+    
+    return Positioned(
+      top: 60,
+      left: 20,
+      right: 20,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.8),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Step indicator
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  controller.getStepName(controller.currentStep),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${controller.completedSteps}/${controller.totalSteps}',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Progress bar
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: controller.progress,
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  controller.progress == 1.0 
+                    ? Colors.green 
+                    : Colors.blue,
+                ),
+                minHeight: 8,
+              ),
+            ),
+            
+            const SizedBox(height: 8),
+            
+            // Stability indicator
+            if (_stabilityCounter > 0)
+              Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      value: _stabilityCounter / _requiredStableFrames,
+                      strokeWidth: 2,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isArabic ? 'ثابت...' : 'Hold steady...',
+                    style: TextStyle(
+                      color: Colors.green.withValues(alpha: 0.8),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

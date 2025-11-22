@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/pose_landmark.dart';
+import '../controllers/measurement_flow_controller.dart';
 
 /// Custom painter that draws AR silhouette guide overlay.
 ///
@@ -8,13 +9,19 @@ import '../../../core/models/pose_landmark.dart';
 /// - YELLOW outline: Phone is vertical BUT pose doesn't match (partial)
 /// - RED outline: Phone is tilted (incorrect orientation)
 /// - Semi-transparent white: Default guide shape
+///
+/// Multi-Pose Mode:
+/// - Front/Back steps: Wide A-pose silhouette (arms extended)
+/// - Side steps: Narrow I-shape profile (arms down)
 class SilhouettePainter extends CustomPainter {
   final bool isPhoneVertical;
   final List<PoseLandmark> landmarks;
+  final MeasurementStep? currentStep;
 
   SilhouettePainter({
     required this.isPhoneVertical,
     required this.landmarks,
+    this.currentStep,
   });
 
   /// Check if the detected pose matches the silhouette guide
@@ -68,6 +75,19 @@ class SilhouettePainter extends CustomPainter {
 
   /// Creates human silhouette path
   Path _createSilhouettePath(double centerX, double centerY, Size size) {
+    // Different silhouettes for different measurement steps
+    final isSideView = currentStep == MeasurementStep.sideRight || 
+                       currentStep == MeasurementStep.sideLeft;
+    
+    if (isSideView) {
+      return _createSideViewSilhouette(centerX, centerY, size);
+    } else {
+      return _createFrontViewSilhouette(centerX, centerY, size);
+    }
+  }
+
+  /// Creates front/back view silhouette (wide A-pose with arms extended)
+  Path _createFrontViewSilhouette(double centerX, double centerY, Size size) {
     final path = Path();
     
     // Head (circle)
@@ -126,20 +146,81 @@ class SilhouettePainter extends CustomPainter {
       height: shoulderHeight,
     ));
 
-    // Arms (simplified as lines with rounded caps)
+    // Arms extended (A-pose for front/back view)
     final armLength = size.height * 0.25;
+    
+    // Left arm (extended outward and down)
     final leftArmStart = Offset(centerX - torsoWidth / 2, shoulderY);
-    final leftArmEnd = Offset(leftArmStart.dx, leftArmStart.dy + armLength);
+    final leftArmEnd = Offset(
+      leftArmStart.dx - armLength * 0.7,
+      leftArmStart.dy + armLength * 0.7,
+    );
     
+    // Right arm (extended outward and down)
     final rightArmStart = Offset(centerX + torsoWidth / 2, shoulderY);
-    final rightArmEnd = Offset(rightArmStart.dx, rightArmStart.dy + armLength);
+    final rightArmEnd = Offset(
+      rightArmStart.dx + armLength * 0.7,
+      rightArmStart.dy + armLength * 0.7,
+    );
     
-    // Add arm lines to path
+    // Add arm lines
     path.moveTo(leftArmStart.dx, leftArmStart.dy);
     path.lineTo(leftArmEnd.dx, leftArmEnd.dy);
     
     path.moveTo(rightArmStart.dx, rightArmStart.dy);
     path.lineTo(rightArmEnd.dx, rightArmEnd.dy);
+
+    return path;
+  }
+
+  /// Creates side view silhouette (narrow I-shape with arms down)
+  Path _createSideViewSilhouette(double centerX, double centerY, Size size) {
+    final path = Path();
+    
+    // Head (smaller circle for profile view)
+    final headRadius = size.width * 0.08;
+    final headY = centerY - size.height * 0.25;
+    
+    path.addOval(Rect.fromCircle(
+      center: Offset(centerX, headY),
+      radius: headRadius,
+    ));
+
+    // Neck (narrower for side view)
+    final neckTop = headY + headRadius;
+    final neckBottom = neckTop + size.height * 0.05;
+    final neckWidth = size.width * 0.04;
+    
+    path.addRRect(RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(centerX, (neckTop + neckBottom) / 2),
+        width: neckWidth,
+        height: neckBottom - neckTop,
+      ),
+      const Radius.circular(8),
+    ));
+
+    // Torso (much narrower for side profile)
+    final torsoTop = neckBottom;
+    final torsoHeight = size.height * 0.35;
+    final torsoWidth = size.width * 0.15; // Narrower side profile
+    
+    path.addRRect(RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(centerX, torsoTop + torsoHeight / 2),
+        width: torsoWidth,
+        height: torsoHeight,
+      ),
+      const Radius.circular(15),
+    ));
+
+    // Single arm line (side view shows one arm)
+    final armLength = size.height * 0.25;
+    final armStart = Offset(centerX, torsoTop + size.height * 0.05);
+    final armEnd = Offset(centerX, armStart.dy + armLength);
+    
+    path.moveTo(armStart.dx, armStart.dy);
+    path.lineTo(armEnd.dx, armEnd.dy);
 
     return path;
   }
@@ -181,6 +262,7 @@ class SilhouettePainter extends CustomPainter {
   @override
   bool shouldRepaint(SilhouettePainter oldDelegate) {
     return oldDelegate.isPhoneVertical != isPhoneVertical ||
-        oldDelegate.landmarks.length != landmarks.length;
+        oldDelegate.landmarks.length != landmarks.length ||
+        oldDelegate.currentStep != currentStep;
   }
 }

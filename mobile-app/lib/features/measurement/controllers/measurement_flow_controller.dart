@@ -1,3 +1,5 @@
+import 'dart:math' show sqrt;
+
 import '../../../core/models/pose_landmark.dart';
 import '../data/measurement_result.dart';
 import '../logic/body_calculator.dart';
@@ -195,21 +197,83 @@ class MeasurementFlowController {
   Future<MeasurementResult?> calculateFinalMeasurements() async {
     if (!isSessionComplete) return null;
 
-    // نستخدم الوضعية الأمامية للحسابات الأساسية
+    // نستخدم الوضعية الأمامية للحسابات الأساسية (عرض الأكتاف والذراعين)
     final frontData = _capturedSteps[MeasurementStep.front];
     if (frontData == null) return null;
 
-    // حساب القياسات باستخدام البيانات الأمامية
+    // حساب القياسات الأساسية من الوضعية الأمامية
     final result = BodyCalculator.calculateMeasurements(
       landmarks: frontData.landmarks,
       userManualHeightCm: _userHeightCm,
     );
 
-    if (result != null) {
-      _currentStep = MeasurementStep.done;
+    if (result == null) return null;
+
+    // تحسين دقة القياسات باستخدام البيانات الجانبية (العمق)
+    final sideRightData = _capturedSteps[MeasurementStep.sideRight];
+    final sideLeftData = _capturedSteps[MeasurementStep.sideLeft];
+    
+    // إذا كانت لدينا قياسات جانبية، نستخدمها لحساب العمق
+    if (sideRightData != null || sideLeftData != null) {
+      // استخدام الجانب الأيمن أولاً، ثم الأيسر كاحتياطي
+      final sideData = sideRightData ?? sideLeftData!;
+      
+      // حساب عمق الصدر من المنظر الجانبي
+      final chestDepth = _calculateChestDepthFromSide(sideData.landmarks);
+      
+      if (chestDepth != null) {
+        // دمج العرض من الأمام والعمق من الجانب لحساب محيط أدق
+        // استخدام صيغة رامانوجان للقطع الناقص: C ≈ π(3(a+b) - √((3a+b)(a+3b)))
+        final chestWidth = result.chestCircumference / 3.14159; // تقدير العرض من المحيط الحالي
+        final a = chestWidth / 2;
+        final b = chestDepth / 2;
+        
+        final improvedChestCircumference = 3.14159 * (3 * (a + b) - 
+          sqrt((3 * a + b) * (a + 3 * b)));
+        
+        // تحديث قياس الصدر بالقيمة المحسنة
+        _currentStep = MeasurementStep.done;
+        return MeasurementResult(
+          totalHeight: result.totalHeight,
+          shoulderWidth: result.shoulderWidth,
+          chestCircumference: improvedChestCircumference,
+          waistCircumference: result.waistCircumference,
+          hipCircumference: result.hipCircumference,
+          armLength: result.armLength,
+          inseam: result.inseam,
+          pixelToCmRatio: result.pixelToCmRatio,
+          calibrationType: result.calibrationType,
+        );
+      }
     }
 
+    // إذا لم تكن هناك بيانات جانبية، نستخدم النتائج الأساسية
+    _currentStep = MeasurementStep.done;
     return result;
+  }
+
+  /// حساب عمق الصدر من المنظر الجانبي
+  double? _calculateChestDepthFromSide(List<PoseLandmark> landmarks) {
+    if (landmarks.length != 33) return null;
+
+    // الحصول على نقاط الكتف والورك من الجانب
+    final shoulder = landmarks[11]; // Left shoulder (visible in side view)
+    final hip = landmarks[23];      // Left hip
+    
+    // حساب المسافة بين الكتف والورك في المحور Z (العمق)
+    // نستخدم قيمة Z النسبية لتقدير العمق
+    final shoulderZ = shoulder.z;
+    final hipZ = hip.z;
+    
+    // تقدير عمق الصدر بناءً على اختلاف Z
+    // القيمة تحتاج للمعايرة بناءً على طول المستخدم
+    final depthRatio = (shoulderZ - hipZ).abs();
+    final estimatedDepthCm = depthRatio * (_userHeightCm ?? 170.0) * 0.5; // معامل تجريبي
+    
+    // التحقق من القيمة المنطقية (عمق الصدر عادة 15-40 سم)
+    if (estimatedDepthCm < 15 || estimatedDepthCm > 40) return null;
+    
+    return estimatedDepthCm;
   }
 
   /// إعادة التقاط خطوة معينة
